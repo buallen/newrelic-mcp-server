@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  newrelic-mcp-server:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: newrelic-mcp-server
+    ports:
+      - "3000:3000"
+      - "9090:9090"
+    environment:
+      - NODE_ENV=production
+      - NEWRELIC_API_KEY=${NEWRELIC_API_KEY}
+      - NEWRELIC_ACCOUNT_ID=${NEWRELIC_ACCOUNT_ID}
+      - CACHE_TYPE=redis
+      - REDIS_HOST=redis
+      - LOG_LEVEL=info
+      - ENABLE_METRICS=true
+    depends_on:
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - newrelic-mcp-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: newrelic-mcp-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - newrelic-mcp-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 可选: Prometheus 监控
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: newrelic-mcp-prometheus
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - newrelic-mcp-network
+    profiles:
+      - monitoring
+
+  # 可选: Grafana 仪表板
+  grafana:
+    image: grafana/grafana:latest
+    container_name: newrelic-mcp-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - newrelic-mcp-network
+    profiles:
+      - monitoring
+
+volumes:
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  newrelic-mcp-network:
+    driver: bridge
