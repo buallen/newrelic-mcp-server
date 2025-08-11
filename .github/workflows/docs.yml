@@ -1,0 +1,152 @@
+name: Deploy Documentation
+
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'docs/**', 'README.md', 'INSTALLATION.md' ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Generate API documentation
+        run: |
+          # 创建文档目录结构
+          mkdir -p _site/docs
+          
+          # 复制现有文档
+          cp README.md _site/
+          cp INSTALLATION.md _site/
+          cp -r docs/* _site/docs/
+          
+          # 创建索引页面
+          cat > _site/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>NewRelic MCP Server Documentation</title>
+              <style>
+                  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 40px; }
+                  .container { max-width: 800px; margin: 0 auto; }
+                  h1 { color: #333; border-bottom: 2px solid #007acc; padding-bottom: 10px; }
+                  .nav { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
+                  .nav a { display: block; margin: 10px 0; color: #007acc; text-decoration: none; }
+                  .nav a:hover { text-decoration: underline; }
+                  .badge { background: #007acc; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <h1>NewRelic MCP Server <span class="badge">v1.0.0</span></h1>
+                  <p>A Model Context Protocol (MCP) server for NewRelic integration with comprehensive monitoring and querying capabilities.</p>
+                  
+                  <div class="nav">
+                      <h3>📚 Documentation</h3>
+                      <a href="README.html">📖 README</a>
+                      <a href="INSTALLATION.html">🚀 Installation Guide</a>
+                      <a href="docs/api.html">🔧 API Documentation</a>
+                      <a href="docs/README.html">📋 Developer Guide</a>
+                  </div>
+                  
+                  <div class="nav">
+                      <h3>🔗 Links</h3>
+                      <a href="https://github.com/buallen/newrelic-mcp-server" target="_blank">GitHub Repository</a>
+                      <a href="https://hub.docker.com/r/buallen/newrelic-mcp-server" target="_blank">Docker Hub</a>
+                      <a href="https://www.npmjs.com/package/newrelic-mcp-server" target="_blank">NPM Package</a>
+                  </div>
+              </div>
+          </body>
+          </html>
+          EOF
+          
+          # 转换 Markdown 为 HTML
+          for file in _site/*.md _site/docs/*.md; do
+            if [ -f "$file" ]; then
+              base=$(basename "$file" .md)
+              dir=$(dirname "$file")
+              cat > "$dir/$base.html" << EOF
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>$base - NewRelic MCP Server</title>
+              <style>
+                  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 40px; line-height: 1.6; }
+                  .container { max-width: 800px; margin: 0 auto; }
+                  pre { background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; }
+                  code { background: #f8f9fa; padding: 2px 4px; border-radius: 3px; }
+                  h1, h2, h3 { color: #333; }
+                  a { color: #007acc; }
+                  .back-link { margin-bottom: 20px; }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <div class="back-link"><a href="../index.html">← Back to Documentation</a></div>
+                  <div id="content"></div>
+              </div>
+              <script>
+                  // 简单的 Markdown 渲染
+                  fetch('$base.md')
+                    .then(response => response.text())
+                    .then(text => {
+                      document.getElementById('content').innerHTML = 
+                        text.replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                            .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                            .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                            .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+                            .replace(/\*(.*)\*/gim, '<em>$1</em>')
+                            .replace(/\`\`\`([^`]+)\`\`\`/gim, '<pre><code>$1</code></pre>')
+                            .replace(/\`([^`]+)\`/gim, '<code>$1</code>')
+                            .replace(/\n/gim, '<br>');
+                    });
+              </script>
+          </body>
+          </html>
+          EOF
+            fi
+          done
+      
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
