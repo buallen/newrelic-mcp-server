@@ -58,8 +58,8 @@ class MCPServerStdio {
 
   async start() {
     try {
-      // For MCP, we'll initialize the protocol handler only
-      // NewRelic client will authenticate lazily when first used
+      // Use the new MCP-only initialization method
+      await this.server.initializeMCPOnly();
       
       // Set up stdin/stdout for MCP protocol
       process.stdin.setEncoding('utf8');
