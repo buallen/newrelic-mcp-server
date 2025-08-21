@@ -112,6 +112,8 @@ export class ResponseParser {
       omittedCount: stats.omittedCount || 0,
       matchCount: stats.matchCount || resultCount,
       wallClockTime: stats.wallClockTime || 0,
+      userTime: stats.userTime || 0,
+      systemTime: stats.systemTime || 0,
     };
   }
 

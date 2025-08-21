@@ -698,8 +698,7 @@ export class PerformanceMonitor implements PerformanceMonitorInterface {
   }
 
   // Private helper methods continue in next part...
-}  // Priva
-te helper methods
+  // Private helper methods
   
   private initializeDefaultThresholds(): void {
     // Response time thresholds

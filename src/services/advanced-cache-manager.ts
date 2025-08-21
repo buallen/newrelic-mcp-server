@@ -1,4 +1,4 @@
-import { Logger } from '../utils/logger';
+import { Logger } from '../interfaces/services';
 import { CacheManager } from './cache-manager';
 
 export interface CacheStrategy {
@@ -811,9 +811,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
     }
   }
 
-  // Private helper methods continue in next part...
-}  // 
-Private helper methods
+  // Private helper methods
   
   private registerDefaultStrategies(): void {
     // Fast access strategy for frequently accessed data

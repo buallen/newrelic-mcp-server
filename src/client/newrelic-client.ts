@@ -127,15 +127,15 @@ export class NewRelicClientImpl implements NewRelicClient {
     const status = error.response?.status;
     
     return retryableStatusCodes.includes(status) && 
-           (error.config.__retryCount || 0) < this.config.retryAttempts;
+           ((error.config as any).__retryCount || 0) < this.config.retryAttempts;
   }
 
   private async retryRequest(config: AxiosRequestConfig): Promise<AxiosResponse> {
-    config.__retryCount = (config.__retryCount || 0) + 1;
+    (config as any).__retryCount = ((config as any).__retryCount || 0) + 1;
     
-    const delay = this.calculateRetryDelay(config.__retryCount);
+    const delay = this.calculateRetryDelay((config as any).__retryCount);
     this.logger.info('Retrying request', {
-      attempt: config.__retryCount,
+      attempt: (config as any).__retryCount,
       delay,
       url: config.url,
     });
@@ -285,6 +285,8 @@ export class NewRelicClientImpl implements NewRelicClient {
           omittedCount: 0,
           matchCount: nrqlData.results?.length || 0,
           wallClockTime: 0, // Not available in this API
+          userTime: 0,
+          systemTime: 0,
         },
       };
     } catch (error) {

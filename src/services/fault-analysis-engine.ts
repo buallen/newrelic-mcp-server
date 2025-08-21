@@ -860,8 +860,8 @@ export class FaultAnalysisEngine implements FaultAnalysisEngineInterface {
   }
 
   // Continue with remaining methods in next part due to length...
-}  as
-ync analyzeCascadeFailure(incident: Incident): Promise<CascadeAnalysis> {
+  
+  async analyzeCascadeFailure(incident: Incident): Promise<CascadeAnalysis> {
     try {
       this.logger.info('Analyzing cascade failure', { incidentId: incident.id });
       

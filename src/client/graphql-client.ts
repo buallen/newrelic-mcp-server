@@ -156,6 +156,8 @@ export class GraphQLClient {
           omittedCount: nrqlData.performanceStats?.omittedCount || 0,
           matchCount: nrqlData.performanceStats?.matchCount || nrqlData.results?.length || 0,
           wallClockTime: nrqlData.performanceStats?.wallClockTime || 0,
+          userTime: nrqlData.performanceStats?.userTime || 0,
+          systemTime: nrqlData.performanceStats?.systemTime || 0,
         },
       };
     } catch (error) {

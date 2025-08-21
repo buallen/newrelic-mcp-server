@@ -919,8 +919,7 @@ export class IncidentAnalyzer implements IncidentAnalyzerInterface {
 
   // Additional private methods would continue here...
   // Due to length constraints, I'll include key methods in the next part
-}  //
- Continue private helper methods
+  // Continue private helper methods
   
   private async buildIncidentTimeline(incident: IncidentDetails): Promise<TimelineEvent[]> {
     const timeline: TimelineEvent[] = [];

@@ -499,7 +499,7 @@ export interface NewRelicConfig {
 }
 
 // Error types
-export enum ErrorType {
+export enum NewRelicErrorType {
   AUTHENTICATION_ERROR = 'AUTHENTICATION_ERROR',
   AUTHORIZATION_ERROR = 'AUTHORIZATION_ERROR',
   RATE_LIMIT_ERROR = 'RATE_LIMIT_ERROR',
@@ -513,7 +513,7 @@ export enum ErrorType {
 }
 
 export interface NewRelicError extends Error {
-  type: ErrorType;
+  type: NewRelicErrorType;
   status?: number;
   retryable: boolean;
   retryAfter?: number;
