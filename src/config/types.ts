@@ -23,14 +23,14 @@ export interface ServerSettings {
 }
 
 export interface NewRelicSettings {
-  apiKey: string;
-  baseUrl: string;
-  graphqlUrl: string;
+  apiKey?: string;
+  baseUrl?: string;
+  graphqlUrl?: string;
   defaultAccountId?: string;
-  timeout: number;
-  retryAttempts: number;
-  retryDelay: number;
-  rateLimitPerMinute: number;
+  timeout?: number;
+  retryAttempts?: number;
+  retryDelay?: number;
+  rateLimitPerMinute?: number;
 }
 
 export interface CacheSettings {
@@ -52,12 +52,12 @@ export interface RedisSettings {
 
 export interface LoggingSettings {
   level: 'debug' | 'info' | 'warn' | 'error';
-  format: 'json' | 'simple';
-  destination: 'console' | 'file';
+  format?: 'json' | 'simple';
+  destination?: 'console' | 'file';
   filename?: string;
   maxSize?: string;
   maxFiles?: number;
-  enableMetrics: boolean;
+  enableMetrics?: boolean;
 }
 
 export interface SecuritySettings {

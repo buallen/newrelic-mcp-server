@@ -1,5 +1,5 @@
-import { NewRelicClient } from '../client/newrelic-client';
-import { Logger } from '../utils/logger';
+import { NewRelicClientImpl } from '../client/newrelic-client';
+import { Logger } from './logger';
 import { CacheManager } from './cache-manager';
 import {
   TimeRange,
@@ -188,7 +188,7 @@ export class TransactionTracer implements TransactionTracerInterface {
   private readonly CACHE_TTL = 300; // 5 minutes
   private readonly TRACE_CACHE_TTL = 600; // 10 minutes for traces
 
-  constructor(client: NewRelicClient, logger: Logger, cache: CacheManager) {
+  constructor(client: NewRelicClientImpl, logger: Logger, cache: CacheManager) {
     this.client = client;
     this.logger = logger;
     this.cache = cache;

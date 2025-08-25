@@ -94,3 +94,6 @@ export class MemoryCacheManager implements CacheManager {
     return deletedCount;
   }
 }
+
+// Export both the interface and implementation
+export { CacheManager } from '../interfaces/services';

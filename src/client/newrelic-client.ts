@@ -60,7 +60,7 @@ export class NewRelicClientImpl implements NewRelicClient {
         return config;
       },
       (error) => {
-        this.logger.error('Request interceptor error', error);
+        this.logger.error('Request interceptor error', error as Error);
         return Promise.reject(error);
       }
     );

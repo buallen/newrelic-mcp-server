@@ -234,6 +234,11 @@ export class ResponseParser {
       policy_name: incident.policy_name || '',
       condition_name: incident.condition_name || '',
       violation_url: incident.violation_url || '',
+      policy_id: incident.policy_id?.toString() || '',
+      condition_id: incident.condition_id?.toString() || '',
+      entity_id: incident.entity_id?.toString(),
+      entity_name: incident.entity_name,
+      entity_type: incident.entity_type,
     };
   }
 

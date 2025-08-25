@@ -120,6 +120,6 @@ class MCPServerStdio {
 // Start the MCP server
 const mcpServer = new MCPServerStdio();
 mcpServer.start().catch((error) => {
-  console.error('Fatal error:', error);
+  console.error('Fatal error:', error as Error);
   process.exit(1);
 });

@@ -1,4 +1,4 @@
-import { Logger } from '../utils/logger';
+import { Logger } from './logger';
 import { CacheManager } from './cache-manager';
 
 export interface PerformanceMetrics {
@@ -300,7 +300,7 @@ export class PerformanceMonitor implements PerformanceMonitorInterface {
       
       return metrics;
     } catch (error) {
-      this.logger.error('Failed to get current metrics', error);
+      this.logger.error('Failed to get current metrics', error as Error);
       throw new Error(`Failed to get current metrics: ${error.message}`);
     }
   }
@@ -350,7 +350,7 @@ export class PerformanceMonitor implements PerformanceMonitorInterface {
         disk
       };
     } catch (error) {
-      this.logger.error('Failed to get resource utilization', error);
+      this.logger.error('Failed to get resource utilization', error as Error);
       throw new Error(`Failed to get resource utilization: ${error.message}`);
     }
   }
@@ -593,7 +593,7 @@ export class PerformanceMonitor implements PerformanceMonitorInterface {
       
       return newAlerts;
     } catch (error) {
-      this.logger.error('Failed to check thresholds', error);
+      this.logger.error('Failed to check thresholds', error as Error);
       throw new Error(`Failed to check thresholds: ${error.message}`);
     }
   }
@@ -657,7 +657,7 @@ export class PerformanceMonitor implements PerformanceMonitorInterface {
       
       return result;
     } catch (error) {
-      this.logger.error('Failed to perform health check', error);
+      this.logger.error('Failed to perform health check', error as Error);
       
       return {
         status: 'unhealthy',
@@ -692,7 +692,7 @@ export class PerformanceMonitor implements PerformanceMonitorInterface {
       
       return dependencies;
     } catch (error) {
-      this.logger.error('Failed to get dependency status', error);
+      this.logger.error('Failed to get dependency status', error as Error);
       throw new Error(`Failed to get dependency status: ${error.message}`);
     }
   }
@@ -726,7 +726,7 @@ export class PerformanceMonitor implements PerformanceMonitorInterface {
         await this.collectSystemMetrics();
         await this.checkThresholds();
       } catch (error) {
-        this.logger.error('Failed to collect periodic metrics', error);
+        this.logger.error('Failed to collect periodic metrics', error as Error);
       }
     }, 30000);
     
@@ -853,7 +853,7 @@ export class PerformanceMonitor implements PerformanceMonitorInterface {
         this.cpuHistory = this.cpuHistory.slice(-this.METRICS_RETENTION);
       }
     } catch (error) {
-      this.logger.error('Failed to collect system metrics', error);
+      this.logger.error('Failed to collect system metrics', error as Error);
     }
   }
 

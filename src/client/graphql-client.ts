@@ -45,7 +45,7 @@ export class GraphQLClient {
         return config;
       },
       (error) => {
-        this.logger.error('GraphQL request interceptor error', error);
+        this.logger.error('GraphQL request interceptor error', error as Error);
         return Promise.reject(error);
       }
     );

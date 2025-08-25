@@ -31,14 +31,14 @@ export class NewRelicMCPServer {
     this.cacheManager = new MemoryCacheManager(this.config.cache.ttl);
     
     const newRelicConfig: NewRelicClientConfig = {
-      apiKey: this.config.newrelic.apiKey,
-      baseUrl: this.config.newrelic.baseUrl,
-      graphqlUrl: this.config.newrelic.graphqlUrl,
+      apiKey: this.config.newrelic.apiKey || '',
+      baseUrl: this.config.newrelic.baseUrl || 'https://api.newrelic.com/v2',
+      graphqlUrl: this.config.newrelic.graphqlUrl || 'https://api.newrelic.com/graphql',
       defaultAccountId: this.config.newrelic.defaultAccountId,
-      timeout: this.config.newrelic.timeout,
-      retryAttempts: this.config.newrelic.retryAttempts,
-      retryDelay: this.config.newrelic.retryDelay,
-      rateLimitPerMinute: this.config.newrelic.rateLimitPerMinute,
+      timeout: this.config.newrelic.timeout || 30000,
+      retryAttempts: this.config.newrelic.retryAttempts || 3,
+      retryDelay: this.config.newrelic.retryDelay || 1000,
+      rateLimitPerMinute: this.config.newrelic.rateLimitPerMinute || 100,
     };
 
     this.newRelicClient = new NewRelicClientImpl(newRelicConfig, this.logger);

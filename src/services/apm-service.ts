@@ -183,7 +183,7 @@ export class APMService implements APMServiceInterface {
       this.logger.info('Retrieved APM applications', { count: applications.length });
       return applications;
     } catch (error) {
-      this.logger.error('Failed to get applications', error);
+      this.logger.error('Failed to get applications', error as Error);
       throw new Error(`Failed to get applications: ${error.message}`);
     }
   }

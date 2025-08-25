@@ -158,6 +158,7 @@ export interface IncidentFilters {
   policy_id?: string;
   condition_id?: string;
   entity_id?: string;
+  state?: 'open' | 'acknowledged' | 'closed';
 }
 
 // Query-related types

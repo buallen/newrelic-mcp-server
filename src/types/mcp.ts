@@ -31,6 +31,8 @@ export interface MCPError {
     details: unknown;
     retryable: boolean;
     retryAfter?: number;
+    stack?: string;
+    request?: unknown;
   };
 }
 

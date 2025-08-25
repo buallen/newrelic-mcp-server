@@ -1,8 +1,9 @@
 import { NewRelicClient } from '../client/newrelic-client';
-import { Logger } from '../utils/logger';
+import { Logger } from './logger';
 import { CacheManager } from './cache-manager';
 import {
   Incident,
+  EntityMetrics,
   IncidentDetails,
   IncidentFilters,
   IncidentAnalysis,
@@ -495,7 +496,7 @@ export class IncidentAnalyzer implements IncidentAnalyzerInterface {
       
       return recommendations;
     } catch (error) {
-      this.logger.error('Failed to generate recommendations', error);
+      this.logger.error('Failed to generate recommendations', error as Error);
       throw new Error(`Failed to generate recommendations: ${error.message}`);
     }
   }
@@ -699,7 +700,7 @@ export class IncidentAnalyzer implements IncidentAnalyzerInterface {
       this.logger.info('Analyzed error patterns', { patternCount: patterns.length });
       return patterns;
     } catch (error) {
-      this.logger.error('Failed to analyze error patterns', error);
+      this.logger.error('Failed to analyze error patterns', error as Error);
       throw new Error(`Failed to analyze error patterns: ${error.message}`);
     }
   }

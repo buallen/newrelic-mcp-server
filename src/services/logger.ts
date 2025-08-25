@@ -60,3 +60,6 @@ export class ConsoleLogger implements Logger {
     return messageLevelIndex >= currentLevelIndex;
   }
 }
+
+// Export both the interface and implementation
+export { Logger } from '../interfaces/services';

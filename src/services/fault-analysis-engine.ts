@@ -1039,7 +1039,7 @@ export class FaultAnalysisEngine implements FaultAnalysisEngineInterface {
       
       this.logger.info('Updated pattern database', { totalPatterns: this.knownPatterns.length });
     } catch (error) {
-      this.logger.error('Failed to update pattern database', error);
+      this.logger.error('Failed to update pattern database', error as Error);
       throw new Error(`Failed to update pattern database: ${error.message}`);
     }
   }

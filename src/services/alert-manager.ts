@@ -389,7 +389,7 @@ export class AlertManager implements AlertManagerInterface {
       this.logger.info('Retrieved notification channels', { count: channels.length });
       return channels;
     } catch (error) {
-      this.logger.error('Failed to get notification channels', error);
+      this.logger.error('Failed to get notification channels', error as Error);
       throw new Error(`Failed to get notification channels: ${error.message}`);
     }
   }

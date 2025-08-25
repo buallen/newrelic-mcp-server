@@ -43,7 +43,10 @@ export class ErrorHandlingMiddleware {
     // Add additional context for debugging
     if (process.env.NODE_ENV === 'development') {
       mcpError.data = {
-        ...mcpError.data,
+        type: mcpError.data?.type || ErrorType.INTERNAL_SERVER_ERROR,
+        details: mcpError.data?.details || error.message,
+        retryable: mcpError.data?.retryable || false,
+        retryAfter: mcpError.data?.retryAfter,
         stack: error.stack,
         request: {
           method: request.method,

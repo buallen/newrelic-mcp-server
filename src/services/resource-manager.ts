@@ -1,4 +1,4 @@
-import { Logger } from '../utils/logger';
+import { Logger } from './logger';
 import { PerformanceMonitor } from './performance-monitor';
 
 export interface ResourcePool<T> {
@@ -688,7 +688,7 @@ export class ResourceManager implements ResourceManagerInterface {
       try {
         await this.collectResourceMetrics();
       } catch (error) {
-        this.logger.error('Failed to collect resource metrics', error);
+        this.logger.error('Failed to collect resource metrics', error as Error);
       }
     }, 60000); // Every minute
 
@@ -846,7 +846,7 @@ export class ResourceManager implements ResourceManagerInterface {
         memoryUsage: memoryUsage.heapUsed 
       });
     } catch (error) {
-      this.logger.error('Failed to collect resource metrics', error);
+      this.logger.error('Failed to collect resource metrics', error as Error);
     }
   }
 }

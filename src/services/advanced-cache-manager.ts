@@ -397,7 +397,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
         duration: Date.now() - startTime
       });
     } catch (error) {
-      this.logger.error('Failed to perform multi-set operation', error);
+      this.logger.error('Failed to perform multi-set operation', error as Error);
       throw error;
     }
   }
@@ -598,7 +598,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
       this.logger.info('Cache optimization completed', result);
       return result;
     } catch (error) {
-      this.logger.error('Failed to optimize cache', error);
+      this.logger.error('Failed to optimize cache', error as Error);
       throw error;
     }
   }
@@ -615,7 +615,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
       
       this.logger.info('Cache compaction completed');
     } catch (error) {
-      this.logger.error('Failed to compact cache', error);
+      this.logger.error('Failed to compact cache', error as Error);
       throw error;
     }
   }
@@ -694,7 +694,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
       
       return analysis;
     } catch (error) {
-      this.logger.error('Failed to analyze cache usage', error);
+      this.logger.error('Failed to analyze cache usage', error as Error);
       throw error;
     }
   }
@@ -806,7 +806,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
       
       this.logger.info('Cache sync with peers completed');
     } catch (error) {
-      this.logger.error('Failed to sync cache with peers', error);
+      this.logger.error('Failed to sync cache with peers', error as Error);
       throw error;
     }
   }
