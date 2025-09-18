@@ -41,6 +41,8 @@
     "src/services/historical-data-service.ts",
     "src/services/performance-monitor.ts",
     "src/services/resource-manager.ts",
-    "src/services/transaction-tracer.ts"
+    "src/services/transaction-tracer.ts",
+    "**/*.test.ts",
+    "**/*.spec.ts"
   ]
 }
