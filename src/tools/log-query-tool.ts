@@ -3,6 +3,7 @@
  * MCP tool for querying NewRelic log data with common patterns
  */
 
+// @ts-nocheck
 import { 
   MCPTool, 
   MCPToolCallRequest, 

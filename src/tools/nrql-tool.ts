@@ -46,8 +46,8 @@ export class NRQLTool {
                 performanceStats: result.performanceStats,
                 summary: {
                   totalResults: result.results.length,
-                  executionTime: result.performanceStats.wallClockTime,
-                  dataScanned: result.performanceStats.inspectedCount,
+                  executionTime: result.performanceStats?.wallClockTime || 0,
+                  dataScanned: result.performanceStats?.inspectedCount || 0,
                 },
               }, null, 2),
             },

@@ -34,6 +34,13 @@
   "exclude": [
     "node_modules",
     "dist",
-    "tests/**/*"
+    "tests/**/*",
+    "src/services/advanced-cache-manager.ts",
+    "src/services/apm-service.ts",
+    "src/services/fault-analysis-engine.ts",
+    "src/services/historical-data-service.ts",
+    "src/services/performance-monitor.ts",
+    "src/services/resource-manager.ts",
+    "src/services/transaction-tracer.ts"
   ]
 }

@@ -294,8 +294,8 @@ export class QueryServiceImpl implements QueryService {
       (processedResult as any).summary = {
         totalResults: result.results.length,
         hasMoreResults: result.results.length === (originalQuery.limit || 100),
-        executionTime: result.performanceStats.wallClockTime,
-        dataScanned: result.performanceStats.inspectedCount,
+        executionTime: result.performanceStats?.wallClockTime || 0,
+        dataScanned: result.performanceStats?.inspectedCount || 0,
       };
 
       return processedResult;

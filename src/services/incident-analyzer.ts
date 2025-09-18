@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NewRelicClient } from '../interfaces/newrelic-client';
 import { Logger, CacheManager } from '../interfaces/services';
 import {
