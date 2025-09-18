@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "newrelic-custom": {
+      "command": "node",
+      "args": ["simple-mcp-server.js"],
+      "cwd": "/Users/kan.lu/Documents/GitHub/newrelic-mcp-server",
+      "env": {
+        "NEW_RELIC_API_KEY": "${NEW_RELIC_API_KEY}",
+        "NEWRELIC_API_KEY": "${NEW_RELIC_API_KEY}", 
+        "NEW_RELIC_ACCOUNT_ID": "464254",
+        "NEWRELIC_ACCOUNT_ID": "464254",
+        "NEWRELIC_GRAPHQL_URL": "https://api.newrelic.com/graphql"
+      }
+    }
+  }
+}

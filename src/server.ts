@@ -7,9 +7,14 @@ import { MCPProtocolHandlerImpl } from './protocol/mcp-protocol-handler';
 import { RequestRouterImpl } from './protocol/request-router';
 import { NewRelicClientImpl } from './client/newrelic-client';
 import { QueryServiceImpl } from './services/query-service';
+import { AlertManager } from './services/alert-manager';
+import { IncidentAnalyzer } from './services/incident-analyzer';
 import { MemoryCacheManager } from './services/cache-manager';
 import { ConsoleLogger } from './services/logger';
 import { NRQLTool } from './tools/nrql-tool';
+import { AlertPolicyTool } from './tools/alert-policy-tool';
+import { IncidentAnalyzerTool } from './tools/incident-analyzer-tool';
+import { LogQueryTool } from './tools/log-query-tool';
 import { NewRelicClientConfig } from './interfaces/newrelic-client';
 import { ServerConfig } from './config/types';
 import { defaultConfig } from './config/default';
@@ -19,9 +24,14 @@ export class NewRelicMCPServer {
   private router: RequestRouterImpl;
   private newRelicClient: NewRelicClientImpl;
   private queryService: QueryServiceImpl;
+  private alertManager: AlertManager;
+  private incidentAnalyzer: IncidentAnalyzer;
   private cacheManager: MemoryCacheManager;
   private logger: ConsoleLogger;
   private nrqlTool: NRQLTool;
+  private alertPolicyTool: AlertPolicyTool;
+  private incidentAnalyzerTool: IncidentAnalyzerTool;
+  private logQueryTool: LogQueryTool;
   private config: ServerConfig;
   private initialized = false;
 
@@ -43,7 +53,12 @@ export class NewRelicMCPServer {
 
     this.newRelicClient = new NewRelicClientImpl(newRelicConfig, this.logger);
     this.queryService = new QueryServiceImpl(this.newRelicClient, this.cacheManager, this.logger);
+    this.alertManager = new AlertManager(this.newRelicClient, this.logger, this.cacheManager);
+    this.incidentAnalyzer = new IncidentAnalyzer(this.newRelicClient, this.logger, this.cacheManager);
     this.nrqlTool = new NRQLTool(this.queryService);
+    this.alertPolicyTool = new AlertPolicyTool(this.alertManager);
+    this.incidentAnalyzerTool = new IncidentAnalyzerTool(this.incidentAnalyzer);
+    this.logQueryTool = new LogQueryTool(this.newRelicClient, this.logger);
     this.router = new RequestRouterImpl(this.logger);
     this.protocolHandler = new MCPProtocolHandlerImpl(this.logger);
   }
@@ -60,9 +75,11 @@ export class NewRelicMCPServer {
       await this.protocolHandler.initialize();
 
       // Authenticate with NewRelic
-      const authenticated = await this.newRelicClient.authenticate(this.config.newrelic.apiKey);
-      if (!authenticated) {
-        throw new Error('Failed to authenticate with NewRelic API');
+      if (this.config.newrelic.apiKey) {
+        const authenticated = await this.newRelicClient.authenticate(this.config.newrelic.apiKey);
+        if (!authenticated) {
+          throw new Error('Failed to authenticate with NewRelic API');
+        }
       }
 
       // Register request handlers
@@ -111,6 +128,12 @@ export class NewRelicMCPServer {
       switch (toolRequest.params.name) {
         case 'nrql_query':
           return await this.nrqlTool.execute(toolRequest);
+        case 'create_alert_policy':
+          return await this.alertPolicyTool.execute(toolRequest);
+        case 'analyze_incident':
+          return await this.incidentAnalyzerTool.execute(toolRequest);
+        case 'log_query':
+          return await this.logQueryTool.execute(toolRequest);
         default:
           return this.protocolHandler.handleToolCall(toolRequest);
       }
@@ -141,7 +164,7 @@ export class NewRelicMCPServer {
           code: -32000,
           message: (error as Error).message,
           data: {
-            type: 'INTERNAL_SERVER_ERROR',
+            type: 'INTERNAL_SERVER_ERROR' as any,
             details: (error as Error).message,
             retryable: false,
           },

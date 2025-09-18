@@ -1,6 +1,5 @@
-import { NewRelicClient } from '../client/newrelic-client';
-import { Logger } from './logger';
-import { CacheManager } from './cache-manager';
+import { NewRelicClient } from '../interfaces/newrelic-client';
+import { Logger, CacheManager } from '../interfaces/services';
 import {
   Incident,
   EntityMetrics,
@@ -26,6 +25,7 @@ import {
   ErrorEvent,
   TimeRange
 } from '../types/newrelic';
+import { MetricCorrelation, ServiceCorrelatedEvent } from '../interfaces/services';
 
 export interface IncidentAnalyzerInterface {
   // Incident data collection
@@ -45,7 +45,7 @@ export interface IncidentAnalyzerInterface {
   analyzeErrorPatterns(errors: ErrorEvent[]): Promise<ErrorPattern[]>;
   
   // Correlation analysis
-  findCorrelatedEvents(incident: Incident): Promise<CorrelatedEvent[]>;
+  findCorrelatedEvents(incident: Incident): Promise<ServiceCorrelatedEvent[]>;
   analyzeDeploymentCorrelation(incident: Incident): Promise<DeploymentCorrelation[]>;
   analyzeInfrastructureCorrelation(incident: Incident): Promise<InfrastructureCorrelation[]>;
 }
@@ -705,11 +705,11 @@ export class IncidentAnalyzer implements IncidentAnalyzerInterface {
     }
   }
 
-  async findCorrelatedEvents(incident: Incident): Promise<CorrelatedEvent[]> {
+  async findCorrelatedEvents(incident: Incident): Promise<ServiceCorrelatedEvent[]> {
     try {
       this.logger.info('Finding correlated events', { incidentId: incident.id });
       
-      const correlatedEvents: CorrelatedEvent[] = [];
+      const correlatedEvents: ServiceCorrelatedEvent[] = [];
       const incidentTime = new Date(incident.opened_at);
       
       // Look for events in a window around the incident
@@ -735,9 +735,8 @@ export class IncidentAnalyzer implements IncidentAnalyzerInterface {
             timestamp: deployment.timestamp,
             type: 'deployment',
             description: `Deployment of ${deployment.applicationName} (${deployment.revision})`,
-            correlation,
-            source: 'NewRelic Deployments',
-            details: deployment
+            correlation_score: correlation,
+            source: 'NewRelic Deployments'
           });
         }
       }
@@ -756,15 +755,14 @@ export class IncidentAnalyzer implements IncidentAnalyzerInterface {
             timestamp: infraEvent.timestamp,
             type: 'infrastructure_event',
             description: `${infraEvent.type} on ${infraEvent.hostname}`,
-            correlation,
-            source: 'Infrastructure Monitoring',
-            details: infraEvent
+            correlation_score: correlation,
+            source: 'Infrastructure Monitoring'
           });
         }
       }
       
       // Sort by correlation strength
-      correlatedEvents.sort((a, b) => b.correlation - a.correlation);
+      correlatedEvents.sort((a, b) => b.correlation_score - a.correlation_score);
       
       this.logger.info('Found correlated events', { 
         incidentId: incident.id, 
@@ -818,6 +816,33 @@ export class IncidentAnalyzer implements IncidentAnalyzerInterface {
     } catch (error) {
       this.logger.error('Failed to analyze deployment correlation', error, { incidentId: incident.id });
       throw new Error(`Failed to analyze deployment correlation: ${error.message}`);
+    }
+  }
+
+  async analyzeMetricCorrelations(
+    entityId: string,
+    timeRange: TimeRange
+  ): Promise<MetricCorrelation[]> {
+    try {
+      this.logger.info('Analyzing metric correlations', { entityId, timeRange });
+      
+      // This is a simplified implementation
+      // In a full implementation, this would analyze correlations between different metrics
+      const correlations: MetricCorrelation[] = [];
+      
+      // For now, return a placeholder correlation between response time and error rate
+      correlations.push({
+        metric1: 'response_time',
+        metric2: 'error_rate',
+        correlation: 0.7,
+        significance: 0.85,
+        timeRange
+      });
+      
+      return correlations;
+    } catch (error) {
+      this.logger.error('Failed to analyze metric correlations', error, { entityId, timeRange });
+      throw new Error(`Failed to analyze metric correlations: ${error.message}`);
     }
   }
 

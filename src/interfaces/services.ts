@@ -56,7 +56,7 @@ export interface AlertManager {
   updatePolicy(policyId: string, updates: Partial<AlertPolicyInput>): Promise<AlertPolicy>;
   deletePolicy(policyId: string): Promise<boolean>;
   getPolicies(filters?: PolicyFilters): Promise<AlertPolicy[]>;
-  getPolicy(policyId: string): Promise<AlertPolicy>;
+  getPolicy(policyId: string): Promise<AlertPolicy | null>;
 
   // Condition management
   createCondition(policyId: string, condition: AlertConditionInput): Promise<AlertCondition>;
@@ -66,7 +66,7 @@ export interface AlertManager {
   ): Promise<AlertCondition>;
   deleteCondition(conditionId: string): Promise<boolean>;
   getConditions(policyId: string): Promise<AlertCondition[]>;
-  getCondition(conditionId: string): Promise<AlertCondition>;
+  getCondition(conditionId: string): Promise<AlertCondition | null>;
 
   // Notification channels
   getNotificationChannels(): Promise<NotificationChannel[]>;

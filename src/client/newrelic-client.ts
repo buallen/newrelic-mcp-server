@@ -239,17 +239,11 @@ export class NewRelicClientImpl implements NewRelicClient {
               nrql(query: $nrql) {
                 results
                 metadata {
-                  eventType
                   eventTypes
                   facets
-                  messages {
-                    level
-                    description
-                  }
+                  messages
                 }
-                totalResult {
-                  count
-                }
+                totalResult
               }
             }
           }
@@ -275,13 +269,13 @@ export class NewRelicClientImpl implements NewRelicClient {
       return {
         results: nrqlData.results || [],
         metadata: {
-          eventType: nrqlData.metadata?.eventType || '',
+          eventType: nrqlData.metadata?.eventTypes?.[0] || '',
           eventTypes: nrqlData.metadata?.eventTypes || [],
           contents: [], // Will be populated from facets if available
           messages: nrqlData.metadata?.messages || [],
         },
         performanceStats: {
-          inspectedCount: nrqlData.totalResult?.count || 0,
+          inspectedCount: nrqlData.totalResult?.count || nrqlData.results?.length || 0,
           omittedCount: 0,
           matchCount: nrqlData.results?.length || 0,
           wallClockTime: 0, // Not available in this API
@@ -299,7 +293,9 @@ export class NewRelicClientImpl implements NewRelicClient {
     try {
       this.logger.debug('Executing GraphQL query');
       
-      const response = await this.httpClient.post(this.config.graphqlUrl, {
+      // Use full GraphQL URL
+      const graphqlUrl = this.config.graphqlUrl || 'https://api.newrelic.com/graphql';
+      const response = await this.httpClient.post(graphqlUrl, {
         query,
         variables,
       });

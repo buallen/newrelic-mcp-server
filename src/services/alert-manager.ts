@@ -1,6 +1,5 @@
-import { NewRelicClient } from '../client/newrelic-client';
-import { Logger } from '../utils/logger';
-import { CacheManager } from './cache-manager';
+import { NewRelicClient } from '../interfaces/newrelic-client';
+import { Logger, CacheManager } from '../interfaces/services';
 import {
   AlertPolicy,
   AlertPolicyInput,
@@ -337,6 +336,16 @@ export class AlertManager implements AlertManagerInterface {
     } catch (error) {
       this.logger.error('Failed to delete alert condition', error, { conditionId });
       throw new Error(`Failed to delete alert condition: ${error.message}`);
+    }
+  }
+
+  async getCondition(conditionId: string): Promise<AlertCondition | null> {
+    try {
+      const condition = await this.getConditionById(conditionId);
+      return condition;
+    } catch (error) {
+      this.logger.error('Failed to get alert condition', error, { conditionId });
+      throw new Error(`Failed to get alert condition: ${error.message}`);
     }
   }
 
