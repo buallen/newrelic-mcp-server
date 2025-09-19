@@ -9,11 +9,11 @@ async function testRealNRQLQuery() {
 
   const apiKey = process.env.NEW_RELIC_API_KEY;
   const accountId = 464254; // StoreHub account
-  
+
   try {
     // Test 1: Direct GraphQL call to confirm API works
     console.log('📊 Test 1: Direct GraphQL NRQL Query');
-    
+
     const graphqlQuery = `
       query($accountId: Int!, $nrql: Nrql!) {
         actor {
@@ -36,58 +36,68 @@ async function testRealNRQLQuery() {
         }
       }
     `;
-    
+
     const variables = {
       accountId: accountId,
-      nrql: 'SELECT count(*) FROM Transaction'
+      nrql: 'SELECT count(*) FROM Transaction',
     };
-    
-    const response = await axios.post('https://api.newrelic.com/graphql', {
-      query: graphqlQuery,
-      variables: variables
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'API-Key': apiKey
+
+    const response = await axios.post(
+      'https://api.newrelic.com/graphql',
+      {
+        query: graphqlQuery,
+        variables: variables,
       },
-      timeout: 10000
-    });
-    
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'API-Key': apiKey,
+        },
+        timeout: 10000,
+      }
+    );
+
     console.log('✅ Direct GraphQL Query Successful!');
     const nrqlData = response.data.data?.actor?.account?.nrql;
     console.log(`  - Transaction count: ${JSON.stringify(nrqlData.results[0])}`);
     console.log(`  - Total events inspected: ${nrqlData.totalResult.count}`);
     console.log(`  - Event types: ${nrqlData.metadata.eventTypes.join(', ')}`);
-    
+
     // Test 2: More complex query
     console.log('\n📊 Test 2: Complex Query with Time Range');
-    
+
     const complexVariables = {
       accountId: accountId,
-      nrql: 'SELECT count(*), average(duration) FROM Transaction SINCE 1 day ago FACET appName LIMIT 5'
+      nrql: 'SELECT count(*), average(duration) FROM Transaction SINCE 1 day ago FACET appName LIMIT 5',
     };
-    
-    const complexResponse = await axios.post('https://api.newrelic.com/graphql', {
-      query: graphqlQuery,
-      variables: complexVariables
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'API-Key': apiKey
+
+    const complexResponse = await axios.post(
+      'https://api.newrelic.com/graphql',
+      {
+        query: graphqlQuery,
+        variables: complexVariables,
       },
-      timeout: 10000
-    });
-    
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'API-Key': apiKey,
+        },
+        timeout: 10000,
+      }
+    );
+
     console.log('✅ Complex Query Successful!');
     const complexData = complexResponse.data.data?.actor?.account?.nrql;
     console.log(`  - Applications found: ${complexData.results.length}`);
     complexData.results.forEach((app, index) => {
-      console.log(`  - App ${index + 1}: ${app.appName || 'Unknown'} - ${app.count} transactions, ${app.average?.toFixed(2)}ms avg duration`);
+      console.log(
+        `  - App ${index + 1}: ${app.appName || 'Unknown'} - ${app.count} transactions, ${app.average?.toFixed(2)}ms avg duration`
+      );
     });
-    
+
     // Test 3: Test what the MCP server should return
     console.log('\n📊 Test 3: Format as MCP Server Response');
-    
+
     const mcpResponse = {
       jsonrpc: '2.0',
       id: 1,
@@ -95,40 +105,44 @@ async function testRealNRQLQuery() {
         content: [
           {
             type: 'text',
-            text: JSON.stringify({
-              query: 'SELECT count(*) FROM Transaction',
-              results: nrqlData.results,
-              metadata: {
-                eventType: nrqlData.metadata.eventTypes[0] || '',
-                eventTypes: nrqlData.metadata.eventTypes || [],
-                contents: [],
-                messages: nrqlData.metadata.messages || []
+            text: JSON.stringify(
+              {
+                query: 'SELECT count(*) FROM Transaction',
+                results: nrqlData.results,
+                metadata: {
+                  eventType: nrqlData.metadata.eventTypes[0] || '',
+                  eventTypes: nrqlData.metadata.eventTypes || [],
+                  contents: [],
+                  messages: nrqlData.metadata.messages || [],
+                },
+                performanceStats: {
+                  inspectedCount: nrqlData.totalResult.count || 0,
+                  omittedCount: 0,
+                  matchCount: nrqlData.results.length || 0,
+                  wallClockTime: 0,
+                  userTime: 0,
+                  systemTime: 0,
+                },
+                summary: {
+                  totalResults: nrqlData.results.length,
+                  executionTime: 0,
+                  dataScanned: nrqlData.totalResult.count || 0,
+                },
               },
-              performanceStats: {
-                inspectedCount: nrqlData.totalResult.count || 0,
-                omittedCount: 0,
-                matchCount: nrqlData.results.length || 0,
-                wallClockTime: 0,
-                userTime: 0,
-                systemTime: 0
-              },
-              summary: {
-                totalResults: nrqlData.results.length,
-                executionTime: 0,
-                dataScanned: nrqlData.totalResult.count || 0
-              }
-            }, null, 2)
-          }
+              null,
+              2
+            ),
+          },
         ],
-        isError: false
-      }
+        isError: false,
+      },
     };
-    
+
     console.log('✅ MCP Response Format:');
     console.log('```json');
     console.log(JSON.stringify(mcpResponse, null, 2));
     console.log('```');
-    
+
     // Summary
     console.log('\n🎉 NRQL Query Implementation Summary:');
     console.log('');
@@ -146,7 +160,6 @@ async function testRealNRQLQuery() {
     console.log('');
     console.log('🚀 **The NewRelic MCP server can now execute real NRQL queries!**');
     console.log('   Just need to rebuild with the fixes to make it work via MCP tools.');
-    
   } catch (error) {
     console.error('❌ Error:', error.response?.data || error.message);
   }

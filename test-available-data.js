@@ -15,7 +15,7 @@ async function testAvailableData() {
 
     // First, let's see what event types are available
     const eventTypesQuery = `SHOW EVENT TYPES SINCE 7 days ago`;
-    
+
     const graphqlQuery1 = `
       {
         actor {
@@ -35,16 +35,20 @@ async function testAvailableData() {
       }`;
 
     console.log('\n1. Checking available event types...');
-    
-    const response1 = await axios.post(GRAPHQL_URL, {
-      query: graphqlQuery1
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'API-Key': API_KEY
+
+    const response1 = await axios.post(
+      GRAPHQL_URL,
+      {
+        query: graphqlQuery1,
       },
-      timeout: 30000
-    });
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'API-Key': API_KEY,
+        },
+        timeout: 30000,
+      }
+    );
 
     if (response1.data.data?.actor?.account?.nrql) {
       const eventTypes = response1.data.data.actor.account.nrql.results;
@@ -57,7 +61,7 @@ async function testAvailableData() {
     // Let's try querying Transaction events instead of Log
     console.log('\n2. Checking Transaction data...');
     const transactionQuery = `SELECT count(*) FROM Transaction SINCE 7 days ago`;
-    
+
     const graphqlQuery2 = `
       {
         actor {
@@ -72,15 +76,19 @@ async function testAvailableData() {
         }
       }`;
 
-    const response2 = await axios.post(GRAPHQL_URL, {
-      query: graphqlQuery2
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'API-Key': API_KEY
+    const response2 = await axios.post(
+      GRAPHQL_URL,
+      {
+        query: graphqlQuery2,
       },
-      timeout: 30000
-    });
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'API-Key': API_KEY,
+        },
+        timeout: 30000,
+      }
+    );
 
     if (response2.data.data?.actor?.account?.nrql) {
       const result = response2.data.data.actor.account.nrql;
@@ -93,7 +101,7 @@ async function testAvailableData() {
     // Let's check if there are any applications reporting
     console.log('\n3. Checking for recent application data...');
     const appQuery = `SELECT uniques(appName) FROM Transaction SINCE 1 day ago LIMIT 10`;
-    
+
     const graphqlQuery3 = `
       {
         actor {
@@ -108,15 +116,19 @@ async function testAvailableData() {
         }
       }`;
 
-    const response3 = await axios.post(GRAPHQL_URL, {
-      query: graphqlQuery3
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'API-Key': API_KEY
+    const response3 = await axios.post(
+      GRAPHQL_URL,
+      {
+        query: graphqlQuery3,
       },
-      timeout: 30000
-    });
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'API-Key': API_KEY,
+        },
+        timeout: 30000,
+      }
+    );
 
     if (response3.data.data?.actor?.account?.nrql) {
       const result = response3.data.data.actor.account.nrql;
@@ -125,7 +137,6 @@ async function testAvailableData() {
         console.log('Messages:', result.metadata.messages);
       }
     }
-    
   } catch (error) {
     console.error('Test failed:', error.message);
     if (error.response) {

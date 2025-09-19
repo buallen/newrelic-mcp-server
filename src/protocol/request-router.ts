@@ -15,10 +15,10 @@ export class RequestRouterImpl implements RequestRouter {
 
   async route(request: MCPRequest): Promise<MCPResponse> {
     const startTime = Date.now();
-    
-    this.logger.debug('Routing request', { 
-      method: request.method, 
-      id: request.id 
+
+    this.logger.debug('Routing request', {
+      method: request.method,
+      id: request.id,
     });
 
     try {
@@ -34,15 +34,15 @@ export class RequestRouterImpl implements RequestRouter {
 
       // Execute middleware chain
       const response = await this.executeMiddlewareChain(request, handler);
-      
+
       const duration = Date.now() - startTime;
       this.logger.logAPICall(request.method, request.params, duration, true);
-      
+
       return response;
     } catch (error) {
       const duration = Date.now() - startTime;
       this.logger.logAPICall(request.method, request.params, duration, false);
-      
+
       this.logger.error('Error routing request', error as Error, {
         method: request.method,
         id: request.id,

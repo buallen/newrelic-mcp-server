@@ -17,8 +17,8 @@ async function executeRealNRQLQueries() {
       defaultAccountId: process.env.NEWRELIC_ACCOUNT_ID, // Optional: your account ID
     },
     logging: {
-      level: 'info'
-    }
+      level: 'info',
+    },
   });
 
   try {
@@ -36,9 +36,9 @@ async function executeRealNRQLQueries() {
         name: 'nrql_query',
         arguments: {
           query: 'SELECT count(*) FROM Transaction SINCE 1 hour ago',
-          limit: 1
-        }
-      }
+          limit: 1,
+        },
+      },
     });
 
     const response1 = await server.handleRequest(query1);
@@ -54,10 +54,11 @@ async function executeRealNRQLQueries() {
       params: {
         name: 'nrql_query',
         arguments: {
-          query: 'SELECT average(duration) FROM Transaction FACET appName SINCE 1 hour ago LIMIT 10',
-          limit: 10
-        }
-      }
+          query:
+            'SELECT average(duration) FROM Transaction FACET appName SINCE 1 hour ago LIMIT 10',
+          limit: 10,
+        },
+      },
     });
 
     const response2 = await server.handleRequest(query2);
@@ -73,10 +74,11 @@ async function executeRealNRQLQueries() {
       params: {
         name: 'nrql_query',
         arguments: {
-          query: 'SELECT percentage(count(*), WHERE error IS true) as errorRate FROM Transaction SINCE 1 hour ago',
-          limit: 1
-        }
-      }
+          query:
+            'SELECT percentage(count(*), WHERE error IS true) as errorRate FROM Transaction SINCE 1 hour ago',
+          limit: 1,
+        },
+      },
     });
 
     const response3 = await server.handleRequest(query3);
@@ -93,9 +95,9 @@ async function executeRealNRQLQueries() {
         name: 'nrql_query',
         arguments: {
           query: 'SELECT average(duration) FROM Transaction SINCE 1 hour ago TIMESERIES 5 minutes',
-          limit: 20
-        }
-      }
+          limit: 20,
+        },
+      },
     });
 
     const response4 = await server.handleRequest(query4);
@@ -103,12 +105,13 @@ async function executeRealNRQLQueries() {
     console.log('Result:', JSON.stringify(data4.result, null, 2));
 
     console.log('\n🎉 All real NRQL queries executed successfully!');
-
   } catch (error) {
     if (error.message.includes('401') || error.message.includes('403')) {
       console.error('❌ Authentication failed. Please check your API key.');
       console.log('\n🔑 To fix this:');
-      console.log('1. Get your API key from: https://one.newrelic.com/launcher/api-keys-ui.api-keys-launcher');
+      console.log(
+        '1. Get your API key from: https://one.newrelic.com/launcher/api-keys-ui.api-keys-launcher'
+      );
       console.log('2. Set environment variable: export NEWRELIC_API_KEY="your_key"');
       console.log('3. Or replace YOUR_API_KEY_HERE in this script');
     } else {

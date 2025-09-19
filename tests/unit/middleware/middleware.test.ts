@@ -209,10 +209,10 @@ describe('Middleware', () => {
         jsonrpc: '2.0',
         id: 1,
         method: 'tools/list',
-        params: { 
+        params: {
           apiKey: 'secret-key',
           password: 'secret-password',
-          data: { token: 'secret-token' }
+          data: { token: 'secret-token' },
         },
       };
 
@@ -230,7 +230,7 @@ describe('Middleware', () => {
           params: {
             apiKey: '[REDACTED]',
             password: '[REDACTED]',
-            data: { token: '[REDACTED]' }
+            data: { token: '[REDACTED]' },
           },
         })
       );

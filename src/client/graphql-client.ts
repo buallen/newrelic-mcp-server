@@ -37,14 +37,14 @@ export class GraphQLClient {
 
     // Request interceptor
     client.interceptors.request.use(
-      (config) => {
+      config => {
         this.logger.debug('GraphQL request', {
           url: config.url,
           query: config.data?.query?.substring(0, 100) + '...',
         });
         return config;
       },
-      (error) => {
+      error => {
         this.logger.error('GraphQL request interceptor error', error as Error);
         return Promise.reject(error);
       }
@@ -52,14 +52,14 @@ export class GraphQLClient {
 
     // Response interceptor
     client.interceptors.response.use(
-      (response) => {
+      response => {
         this.logger.debug('GraphQL response received', {
           status: response.status,
           hasErrors: !!response.data?.errors,
         });
         return response;
       },
-      (error) => {
+      error => {
         this.logger.error('GraphQL request failed', error, {
           status: error.response?.status,
           message: error.response?.data?.message || error.message,
@@ -144,11 +144,12 @@ export class GraphQLClient {
         metadata: {
           eventType: nrqlData.metadata?.eventType || '',
           eventTypes: nrqlData.metadata?.eventTypes || [],
-          contents: nrqlData.metadata?.facets?.map((facet: string) => ({
-            function: 'facet',
-            attribute: facet,
-            simple: true,
-          })) || [],
+          contents:
+            nrqlData.metadata?.facets?.map((facet: string) => ({
+              function: 'facet',
+              attribute: facet,
+              simple: true,
+            })) || [],
           messages: nrqlData.metadata?.messages || [],
         },
         performanceStats: {
@@ -206,7 +207,7 @@ export class GraphQLClient {
 
     try {
       const result = await this.executeQuery(query, variables);
-      
+
       if (result.errors) {
         throw new Error(`Entity query failed: ${result.errors[0].message}`);
       }
@@ -257,7 +258,7 @@ export class GraphQLClient {
 
     try {
       const result = await this.executeQuery(query, variables);
-      
+
       if (result.errors) {
         throw new Error(`Entity search failed: ${result.errors[0].message}`);
       }
@@ -270,7 +271,10 @@ export class GraphQLClient {
   }
 
   // Get golden metrics for entities
-  async getGoldenMetrics(entityGuids: string[], timeRange?: { since?: string; until?: string }): Promise<any[]> {
+  async getGoldenMetrics(
+    entityGuids: string[],
+    timeRange?: { since?: string; until?: string }
+  ): Promise<any[]> {
     const query = `
       query($guids: [EntityGuid!]!, $since: EpochMilliseconds, $until: EpochMilliseconds) {
         actor {
@@ -302,7 +306,7 @@ export class GraphQLClient {
 
     try {
       const result = await this.executeQuery(query, variables);
-      
+
       if (result.errors) {
         throw new Error(`Golden metrics query failed: ${result.errors[0].message}`);
       }
@@ -315,7 +319,10 @@ export class GraphQLClient {
   }
 
   // Get alert violations
-  async getAlertViolations(entityGuids: string[], timeRange?: { since?: string; until?: string }): Promise<any[]> {
+  async getAlertViolations(
+    entityGuids: string[],
+    timeRange?: { since?: string; until?: string }
+  ): Promise<any[]> {
     const query = `
       query($guids: [EntityGuid!]!, $since: EpochMilliseconds, $until: EpochMilliseconds) {
         actor {
@@ -346,7 +353,7 @@ export class GraphQLClient {
 
     try {
       const result = await this.executeQuery(query, variables);
-      
+
       if (result.errors) {
         throw new Error(`Alert violations query failed: ${result.errors[0].message}`);
       }
@@ -377,7 +384,7 @@ export class GraphQLClient {
 
     try {
       const result = await this.executeQuery(query, variables);
-      
+
       if (result.errors) {
         throw new Error(`Account info query failed: ${result.errors[0].message}`);
       }
@@ -405,7 +412,7 @@ export class GraphQLClient {
 
     try {
       const result = await this.executeQuery(query);
-      
+
       if (result.errors) {
         throw new Error(`User info query failed: ${result.errors[0].message}`);
       }
@@ -418,7 +425,10 @@ export class GraphQLClient {
   }
 
   // Validate NRQL query
-  async validateNRQL(query: string, accountId: number): Promise<{ valid: boolean; errors: string[] }> {
+  async validateNRQL(
+    query: string,
+    accountId: number
+  ): Promise<{ valid: boolean; errors: string[] }> {
     const validationQuery = `
       query($accountId: Int!, $nrql: Nrql!) {
         actor {
@@ -443,7 +453,7 @@ export class GraphQLClient {
 
     try {
       const result = await this.executeQuery(validationQuery, variables);
-      
+
       if (result.errors) {
         return {
           valid: false,
@@ -485,7 +495,7 @@ export class GraphQLClient {
 
     try {
       const result = await this.executeQuery(query, variables);
-      
+
       if (result.errors) {
         throw new Error(`Event types query failed: ${result.errors[0].message}`);
       }

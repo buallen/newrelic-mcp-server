@@ -11,7 +11,7 @@ const path = require('path');
 if (!fs.existsSync('./dist')) {
   console.log('Building project first...');
   const { execSync } = require('child_process');
-  
+
   try {
     // Try to build just the files we need by ignoring errors
     execSync('npx tsc --noEmitOnError false --skipLibCheck', { stdio: 'inherit' });
@@ -35,8 +35,8 @@ async function testNRQLQuery() {
         baseUrl: 'https://api.newrelic.com/v2',
       },
       logging: {
-        level: 'info'
-      }
+        level: 'info',
+      },
     });
 
     console.log('✓ Server instantiated successfully');
@@ -51,12 +51,12 @@ async function testNRQLQuery() {
       jsonrpc: '2.0',
       id: 1,
       method: 'tools/list',
-      params: {}
+      params: {},
     });
 
     const toolsResponse = await server.handleRequest(toolsListRequest);
     const toolsData = JSON.parse(toolsResponse);
-    
+
     const nrqlTool = toolsData.result.tools.find(tool => tool.name === 'nrql_query');
     if (nrqlTool) {
       console.log('✓ NRQL query tool found:');
@@ -77,14 +77,14 @@ async function testNRQLQuery() {
         name: 'nrql_query',
         arguments: {
           query: 'SELECT count(*) FROM Transaction SINCE 1 hour ago',
-          limit: 10
-        }
-      }
+          limit: 10,
+        },
+      },
     });
 
     const nrqlResponse = await server.handleRequest(nrqlRequest);
     const nrqlData = JSON.parse(nrqlResponse);
-    
+
     console.log('✓ NRQL query request handled');
     if (nrqlData.result && nrqlData.result.isError) {
       console.log('✓ Error handled gracefully (expected without API key)');
@@ -104,14 +104,14 @@ async function testNRQLQuery() {
         name: 'nrql_query',
         arguments: {
           // Missing required 'query' parameter
-          limit: 10
-        }
-      }
+          limit: 10,
+        },
+      },
     });
 
     const invalidResponse = await server.handleRequest(invalidNrqlRequest);
     const invalidData = JSON.parse(invalidResponse);
-    
+
     console.log('✓ Invalid NRQL request handled');
     if (invalidData.result && invalidData.result.isError) {
       console.log('✓ Parameter validation working');
@@ -170,7 +170,6 @@ async function testNRQLQuery() {
     console.log('1. Set NEWRELIC_API_KEY environment variable');
     console.log('2. Use server.initialize() instead of initializeMCPOnly()');
     console.log('3. Provide valid NRQL queries for your account');
-
   } catch (error) {
     console.error('❌ Test failed:', error.message);
     console.error(error.stack);

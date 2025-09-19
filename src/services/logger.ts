@@ -32,7 +32,13 @@ export class ConsoleLogger implements Logger {
     }
   }
 
-  logAPICall(method: string, params: unknown, duration: number, success: boolean, meta?: Record<string, unknown>): void {
+  logAPICall(
+    method: string,
+    params: unknown,
+    duration: number,
+    success: boolean,
+    meta?: Record<string, unknown>
+  ): void {
     this.info(`API Call: ${method}`, {
       duration,
       success,

@@ -3,12 +3,7 @@
  * Handles NRQL query processing and execution
  */
 
-import { 
-  NRQLQuery, 
-  NRQLResult, 
-  ValidationResult, 
-  EntityType 
-} from '../types/newrelic';
+import { NRQLQuery, NRQLResult, ValidationResult, EntityType } from '../types/newrelic';
 import { QueryService, QueryBuilderParams } from '../interfaces/services';
 import { NewRelicClient } from '../interfaces/newrelic-client';
 import { CacheManager, Logger } from '../interfaces/services';
@@ -30,17 +25,17 @@ export class QueryServiceImpl implements QueryService {
 
   async executeQuery(query: NRQLQuery): Promise<NRQLResult> {
     const startTime = Date.now();
-    
+
     try {
-      this.logger.info('Executing NRQL query', { 
+      this.logger.info('Executing NRQL query', {
         query: query.query.substring(0, 100) + '...',
-        accountId: query.accountId 
+        accountId: query.accountId,
       });
 
       // Validate query first
       const validation = await this.validateQuery(query.query);
       if (!validation.valid) {
-        const errorMessages = validation.errors.map(error => 
+        const errorMessages = validation.errors.map(error =>
           typeof error === 'string' ? error : error.message
         );
         throw new Error(`Invalid NRQL query: ${errorMessages.join(', ')}`);
@@ -49,7 +44,7 @@ export class QueryServiceImpl implements QueryService {
       // Check cache first
       const cacheKey = this.generateCacheKey(query);
       const cachedResult = await this.cacheManager.get<NRQLResult>(cacheKey);
-      
+
       if (cachedResult) {
         this.logger.debug('Query result found in cache', { cacheKey });
         const duration = Date.now() - startTime;
@@ -59,22 +54,22 @@ export class QueryServiceImpl implements QueryService {
 
       // Execute query
       const result = await this.newRelicClient.executeNRQL(query);
-      
+
       // Process and format results
       const processedResult = this.processQueryResult(result, query);
-      
+
       // Cache the result
       await this.cacheManager.set(cacheKey, processedResult, 300); // 5 minutes TTL
-      
+
       const duration = Date.now() - startTime;
       this.logger.info('NRQL query executed successfully', {
         resultCount: processedResult.results.length,
         duration,
         cached: false,
       });
-      
+
       this.logger.logQueryExecution(query.query, processedResult.results.length, duration);
-      
+
       return processedResult;
     } catch (error) {
       const duration = Date.now() - startTime;
@@ -107,23 +102,25 @@ export class QueryServiceImpl implements QueryService {
 
       // Then, validate with NewRelic API
       const apiValidation = await this.newRelicClient.validateQuery(query);
-      
-      this.logger.debug('Query validation completed', { 
+
+      this.logger.debug('Query validation completed', {
         valid: apiValidation.valid,
-        errorCount: apiValidation.errors.length 
+        errorCount: apiValidation.errors.length,
       });
-      
+
       return apiValidation;
     } catch (error) {
       this.logger.error('Query validation failed', error as Error, { query });
       return {
         valid: false,
-        errors: [{
-          line: 1,
-          column: 1,
-          message: (error as Error).message,
-          severity: 'error',
-        }],
+        errors: [
+          {
+            line: 1,
+            column: 1,
+            message: (error as Error).message,
+            severity: 'error',
+          },
+        ],
         suggestions: [],
       };
     }
@@ -135,18 +132,18 @@ export class QueryServiceImpl implements QueryService {
 
       // Get suggestions from query builder
       const builderSuggestions = this.queryBuilder.getQuerySuggestions(partialQuery);
-      
+
       // Get suggestions from NewRelic API
       const apiSuggestions = await this.newRelicClient.getQuerySuggestions(partialQuery);
-      
+
       // Combine and deduplicate suggestions
       const allSuggestions = [...builderSuggestions, ...apiSuggestions];
       const uniqueSuggestions = Array.from(new Set(allSuggestions));
-      
-      this.logger.debug('Query suggestions generated', { 
-        count: uniqueSuggestions.length 
+
+      this.logger.debug('Query suggestions generated', {
+        count: uniqueSuggestions.length,
       });
-      
+
       return uniqueSuggestions;
     } catch (error) {
       this.logger.error('Failed to get query suggestions', error as Error, { partialQuery });
@@ -161,7 +158,7 @@ export class QueryServiceImpl implements QueryService {
       // Check cache first
       const cacheKey = `metrics:${entityType || 'all'}`;
       const cachedMetrics = await this.cacheManager.get<string[]>(cacheKey);
-      
+
       if (cachedMetrics) {
         this.logger.debug('Metric names found in cache', { count: cachedMetrics.length });
         return cachedMetrics;
@@ -169,33 +166,33 @@ export class QueryServiceImpl implements QueryService {
 
       // Get metrics from NewRelic API
       const apiMetrics = await this.newRelicClient.getMetricNames(entityType);
-      
+
       // Get common attributes from query builder
-      const commonAttributes = entityType ? 
-        this.queryBuilder.getCommonAttributes(entityType) : 
-        this.queryBuilder.getCommonEventTypes().flatMap(type => 
-          this.queryBuilder.getCommonAttributes(type)
-        );
-      
+      const commonAttributes = entityType
+        ? this.queryBuilder.getCommonAttributes(entityType)
+        : this.queryBuilder
+            .getCommonEventTypes()
+            .flatMap(type => this.queryBuilder.getCommonAttributes(type));
+
       // Combine and deduplicate
       const allMetrics = [...apiMetrics, ...commonAttributes];
       const uniqueMetrics = Array.from(new Set(allMetrics)).sort();
-      
+
       // Cache the result
       await this.cacheManager.set(cacheKey, uniqueMetrics, 3600); // 1 hour TTL
-      
+
       this.logger.debug('Metric names retrieved', { count: uniqueMetrics.length });
-      
+
       return uniqueMetrics;
     } catch (error) {
       this.logger.error('Failed to get metric names', error as Error, { entityType });
-      
+
       // Fallback to query builder metrics
-      return entityType ? 
-        this.queryBuilder.getCommonAttributes(entityType) : 
-        this.queryBuilder.getCommonEventTypes().flatMap(type => 
-          this.queryBuilder.getCommonAttributes(type)
-        );
+      return entityType
+        ? this.queryBuilder.getCommonAttributes(entityType)
+        : this.queryBuilder
+            .getCommonEventTypes()
+            .flatMap(type => this.queryBuilder.getCommonAttributes(type));
     }
   }
 
@@ -206,7 +203,7 @@ export class QueryServiceImpl implements QueryService {
       // Check cache first
       const cacheKey = 'entity-types';
       const cachedTypes = await this.cacheManager.get<EntityType[]>(cacheKey);
-      
+
       if (cachedTypes) {
         this.logger.debug('Entity types found in cache', { count: cachedTypes.length });
         return cachedTypes;
@@ -214,16 +211,16 @@ export class QueryServiceImpl implements QueryService {
 
       // Get entity types from NewRelic API
       const entityTypes = await this.newRelicClient.getEntityTypes();
-      
+
       // Cache the result
       await this.cacheManager.set(cacheKey, entityTypes, 3600); // 1 hour TTL
-      
+
       this.logger.debug('Entity types retrieved', { count: entityTypes.length });
-      
+
       return entityTypes;
     } catch (error) {
       this.logger.error('Failed to get entity types', error as Error);
-      
+
       // Fallback to default entity types
       return [
         { name: 'Application', domain: 'APM', type: 'APPLICATION' },
@@ -250,7 +247,7 @@ export class QueryServiceImpl implements QueryService {
       });
 
       this.logger.debug('NRQL query built', { query });
-      
+
       return query;
     } catch (error) {
       this.logger.error('Failed to build query', error as Error, { params });
@@ -267,7 +264,7 @@ export class QueryServiceImpl implements QueryService {
       timeout: query.timeout,
       limit: query.limit,
     };
-    
+
     return `nrql:${Buffer.from(JSON.stringify(keyData)).toString('base64')}`;
   }
 
@@ -283,7 +280,9 @@ export class QueryServiceImpl implements QueryService {
 
       // Process results based on query type
       if (this.isTimeSeriesQuery(originalQuery.query)) {
-        (processedResult as any).timeSeries = this.responseParser.parseTimeSeriesData(result.results);
+        (processedResult as any).timeSeries = this.responseParser.parseTimeSeriesData(
+          result.results
+        );
       }
 
       if (this.isFacetedQuery(originalQuery.query)) {
@@ -322,15 +321,16 @@ export class QueryServiceImpl implements QueryService {
       let optimizedQuery = query;
 
       // Add LIMIT if not present and query doesn't have aggregation
-      if (!query.toUpperCase().includes('LIMIT') && 
-          !this.hasAggregation(query) && 
-          !query.toUpperCase().includes('COUNT(')) {
+      if (
+        !query.toUpperCase().includes('LIMIT') &&
+        !this.hasAggregation(query) &&
+        !query.toUpperCase().includes('COUNT(')
+      ) {
         optimizedQuery += ' LIMIT 100';
       }
 
       // Suggest more specific time ranges for better performance
-      if (!query.toUpperCase().includes('SINCE') && 
-          !query.toUpperCase().includes('UNTIL')) {
+      if (!query.toUpperCase().includes('SINCE') && !query.toUpperCase().includes('UNTIL')) {
         optimizedQuery += ' SINCE 1 hour ago';
       }
 
@@ -339,9 +339,9 @@ export class QueryServiceImpl implements QueryService {
         // AppName is typically indexed, this is already optimal
       }
 
-      this.logger.debug('Query optimization completed', { 
+      this.logger.debug('Query optimization completed', {
         original: query.length,
-        optimized: optimizedQuery.length 
+        optimized: optimizedQuery.length,
       });
 
       return optimizedQuery;
@@ -353,10 +353,17 @@ export class QueryServiceImpl implements QueryService {
 
   private hasAggregation(query: string): boolean {
     const aggregationFunctions = [
-      'COUNT', 'SUM', 'AVERAGE', 'MIN', 'MAX', 
-      'PERCENTAGE', 'APDEX', 'RATE', 'STDDEV'
+      'COUNT',
+      'SUM',
+      'AVERAGE',
+      'MIN',
+      'MAX',
+      'PERCENTAGE',
+      'APDEX',
+      'RATE',
+      'STDDEV',
     ];
-    
+
     const upperQuery = query.toUpperCase();
     return aggregationFunctions.some(func => upperQuery.includes(func + '('));
   }
@@ -380,9 +387,9 @@ export class QueryServiceImpl implements QueryService {
         isFaceted: this.isFacetedQuery(query),
       };
 
-      this.logger.debug('Query analysis completed', { 
+      this.logger.debug('Query analysis completed', {
         complexity: analysis.complexity,
-        estimatedCost: analysis.estimatedCost 
+        estimatedCost: analysis.estimatedCost,
       });
 
       return analysis;
@@ -408,7 +415,9 @@ export class QueryServiceImpl implements QueryService {
     if (upperQuery.includes('ORDER BY')) complexity += 1;
 
     // Count aggregation functions
-    const aggregations = (upperQuery.match(/\b(COUNT|SUM|AVERAGE|MIN|MAX|PERCENTAGE|APDEX|RATE)\s*\(/g) || []).length;
+    const aggregations = (
+      upperQuery.match(/\b(COUNT|SUM|AVERAGE|MIN|MAX|PERCENTAGE|APDEX|RATE)\s*\(/g) || []
+    ).length;
     complexity += aggregations;
 
     if (complexity <= 3) return 'low';
@@ -423,7 +432,10 @@ export class QueryServiceImpl implements QueryService {
     // Time range impact
     if (upperQuery.includes('SINCE 1 HOUR AGO') || upperQuery.includes('SINCE 60 MINUTES AGO')) {
       cost += 1;
-    } else if (upperQuery.includes('SINCE 1 DAY AGO') || upperQuery.includes('SINCE 24 HOURS AGO')) {
+    } else if (
+      upperQuery.includes('SINCE 1 DAY AGO') ||
+      upperQuery.includes('SINCE 24 HOURS AGO')
+    ) {
       cost += 2;
     } else if (upperQuery.includes('SINCE 1 WEEK AGO') || upperQuery.includes('SINCE 7 DAYS AGO')) {
       cost += 3;
@@ -483,7 +495,7 @@ export class QueryServiceImpl implements QueryService {
 
   private extractAttributes(query: string): string[] {
     const attributes: string[] = [];
-    
+
     // Extract from SELECT clause
     const selectMatch = query.match(/SELECT\s+(.+?)\s+FROM/i);
     if (selectMatch) {
@@ -495,7 +507,9 @@ export class QueryServiceImpl implements QueryService {
     }
 
     // Extract from WHERE clause
-    const whereMatches = query.match(/WHERE\s+(.+?)(?:\s+(?:FACET|TIMESERIES|ORDER|LIMIT|SINCE|UNTIL)|$)/i);
+    const whereMatches = query.match(
+      /WHERE\s+(.+?)(?:\s+(?:FACET|TIMESERIES|ORDER|LIMIT|SINCE|UNTIL)|$)/i
+    );
     if (whereMatches) {
       const whereClause = whereMatches[1];
       const attrMatches = whereClause.match(/\b\w+\b(?=\s*[=<>!])/g);
@@ -509,7 +523,7 @@ export class QueryServiceImpl implements QueryService {
 
   private extractTimeRange(query: string): { since?: string; until?: string } {
     const timeRange: { since?: string; until?: string } = {};
-    
+
     const sinceMatch = query.match(/SINCE\s+(.+?)(?:\s+(?:UNTIL|COMPARE|$))/i);
     if (sinceMatch) {
       timeRange.since = sinceMatch[1].trim();

@@ -13,18 +13,18 @@ async function testMCPServer() {
     stdio: ['pipe', 'pipe', 'pipe'],
     env: {
       ...process.env,
-      NEW_RELIC_API_KEY: process.env.NEW_RELIC_API_KEY
-    }
+      NEW_RELIC_API_KEY: process.env.NEW_RELIC_API_KEY,
+    },
   });
 
   let responseBuffer = '';
-  
+
   // Set up response handling
-  server.stdout.on('data', (data) => {
+  server.stdout.on('data', data => {
     responseBuffer += data.toString();
   });
 
-  server.stderr.on('data', (data) => {
+  server.stderr.on('data', data => {
     console.error('Server Error:', data.toString());
   });
 
@@ -36,9 +36,9 @@ async function testMCPServer() {
       }, 5000);
 
       const originalLength = responseBuffer.length;
-      
+
       server.stdin.write(JSON.stringify(request) + '\n');
-      
+
       // Wait for response
       const checkResponse = () => {
         if (responseBuffer.length > originalLength) {
@@ -58,7 +58,7 @@ async function testMCPServer() {
           setTimeout(checkResponse, 100);
         }
       };
-      
+
       setTimeout(checkResponse, 100);
     });
   }
@@ -76,8 +76,8 @@ async function testMCPServer() {
       params: {
         protocolVersion: '2024-11-05',
         capabilities: {},
-        clientInfo: { name: 'test-client', version: '1.0.0' }
-      }
+        clientInfo: { name: 'test-client', version: '1.0.0' },
+      },
     });
     console.log('✅ Initialize successful:', initResponse.result.serverInfo.name);
 
@@ -87,7 +87,7 @@ async function testMCPServer() {
       jsonrpc: '2.0',
       id: 2,
       method: 'tools/list',
-      params: {}
+      params: {},
     });
     console.log('✅ Tools available:', toolsResponse.result.tools.map(t => t.name).join(', '));
 
@@ -101,16 +101,16 @@ async function testMCPServer() {
         name: 'nrql_query',
         arguments: {
           query: 'SELECT timestamp, message, hostname FROM Log',
-          limit: 5
-        }
-      }
+          limit: 5,
+        },
+      },
     });
-    
+
     const nrqlResult = JSON.parse(nrqlResponse.result.content[0].text);
     console.log(`✅ NRQL Query successful: ${nrqlResult.results.length} results (LIMIT 5)`);
     console.log(`   Query executed: ${nrqlResult.query}`);
 
-    // Test 4: NRQL Query with larger limit  
+    // Test 4: NRQL Query with larger limit
     console.log('\n📊 Test 4: NRQL Query with LIMIT 20');
     const nrql20Response = await sendRequest({
       jsonrpc: '2.0',
@@ -120,11 +120,11 @@ async function testMCPServer() {
         name: 'nrql_query',
         arguments: {
           query: 'SELECT timestamp FROM Log',
-          limit: 20
-        }
-      }
+          limit: 20,
+        },
+      },
     });
-    
+
     const nrql20Result = JSON.parse(nrql20Response.result.content[0].text);
     console.log(`✅ NRQL Query successful: ${nrql20Result.results.length} results (LIMIT 20)`);
 
@@ -139,18 +139,21 @@ async function testMCPServer() {
         arguments: {
           query_type: 'recent_logs',
           time_period: '7 days ago',
-          limit: 15
-        }
-      }
+          limit: 15,
+        },
+      },
     });
-    
+
     const logResult = JSON.parse(logResponse.result.content[0].text);
     console.log(`✅ Log Query successful: ${logResult.logs.length} results (LIMIT 15)`);
     console.log(`   Query executed: ${logResult.query_executed}`);
 
-    console.log('\n🎯 Success! Our custom NewRelic MCP server is working with configurable LIMIT values!');
-    console.log('🔧 Key difference: Unlike the external MCP server, ours allows you to specify any LIMIT from 1-1000');
-
+    console.log(
+      '\n🎯 Success! Our custom NewRelic MCP server is working with configurable LIMIT values!'
+    );
+    console.log(
+      '🔧 Key difference: Unlike the external MCP server, ours allows you to specify any LIMIT from 1-1000'
+    );
   } catch (error) {
     console.error('❌ Test failed:', error.message);
   } finally {

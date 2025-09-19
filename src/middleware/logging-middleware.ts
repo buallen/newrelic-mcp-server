@@ -72,7 +72,7 @@ export class LoggingMiddleware {
 
     // Remove sensitive information
     const sensitiveKeys = ['apiKey', 'password', 'token', 'secret', 'key'];
-    
+
     for (const key of sensitiveKeys) {
       if (key in sanitized) {
         sanitized[key] = '[REDACTED]';

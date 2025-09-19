@@ -54,7 +54,7 @@ export class RateLimitMiddleware {
       // Check rate limit
       if (entry.count >= this.maxRequests) {
         const resetIn = Math.ceil((entry.resetTime - now) / 1000);
-        
+
         this.logger.warn('Rate limit exceeded', {
           clientId,
           method: request.method,
@@ -83,7 +83,7 @@ export class RateLimitMiddleware {
 
       // Add rate limit headers to response
       const response = await next();
-      
+
       // Add rate limit information to response metadata
       if (!response.error) {
         (response as any).rateLimit = {

@@ -18,7 +18,7 @@ async function testNRQLQuery() {
 
     // Test simple NRQL query
     const query = `SELECT count(*) FROM Log LIMIT 1 SINCE 1 day ago`;
-    
+
     const graphqlQuery = `
       {
         actor {
@@ -38,15 +38,19 @@ async function testNRQLQuery() {
         }
       }`;
 
-    const response = await axios.post(GRAPHQL_URL, {
-      query: graphqlQuery
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'API-Key': API_KEY
+    const response = await axios.post(
+      GRAPHQL_URL,
+      {
+        query: graphqlQuery,
       },
-      timeout: 30000
-    });
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'API-Key': API_KEY,
+        },
+        timeout: 30000,
+      }
+    );
 
     if (response.data.errors) {
       console.error('GraphQL errors:', JSON.stringify(response.data.errors, null, 2));
@@ -55,7 +59,6 @@ async function testNRQLQuery() {
 
     const result = response.data.data?.actor?.account?.nrql;
     console.log('NRQL Result:', JSON.stringify(result, null, 2));
-    
   } catch (error) {
     console.error('Test failed:', error.message);
     if (error.response) {

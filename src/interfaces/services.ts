@@ -158,10 +158,7 @@ export interface IncidentAnalyzer {
 
   // Correlation analysis
   findCorrelatedEvents(incident: Incident): Promise<ServiceCorrelatedEvent[]>;
-  analyzeMetricCorrelations(
-    entityId: string,
-    timeRange: TimeRange
-  ): Promise<MetricCorrelation[]>;
+  analyzeMetricCorrelations(entityId: string, timeRange: TimeRange): Promise<MetricCorrelation[]>;
 }
 
 export interface ServiceCorrelatedEvent {
@@ -207,11 +204,11 @@ export interface CacheManager {
   clear(): Promise<void>;
   exists(key: string): Promise<boolean>;
   ttl(key: string): Promise<number>;
-  
+
   // Bulk operations
   mget<T>(keys: string[]): Promise<Array<T | null>>;
   mset<T>(entries: Array<{ key: string; value: T; ttl?: number }>): Promise<void>;
-  
+
   // Pattern operations
   keys(pattern: string): Promise<string[]>;
   deletePattern(pattern: string): Promise<number>;

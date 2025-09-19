@@ -60,19 +60,19 @@ class MCPServerStdio {
     try {
       // Use the new MCP-only initialization method
       await this.server.initializeMCPOnly();
-      
+
       // Set up stdin/stdout for MCP protocol
       process.stdin.setEncoding('utf8');
-      
+
       let buffer = '';
-      
-      process.stdin.on('data', async (chunk) => {
+
+      process.stdin.on('data', async chunk => {
         buffer += chunk;
         const lines = buffer.split('\n');
-        
+
         // Keep the last incomplete line in buffer
         buffer = lines.pop() || '';
-        
+
         for (const line of lines) {
           if (line.trim()) {
             try {
@@ -108,7 +108,6 @@ class MCPServerStdio {
 
       // Keep the process running
       process.stdin.resume();
-
     } catch (error) {
       // Use original console.error for fatal errors
       originalConsoleError('Failed to start MCP server:', (error as Error).message);
@@ -119,7 +118,7 @@ class MCPServerStdio {
 
 // Start the MCP server
 const mcpServer = new MCPServerStdio();
-mcpServer.start().catch((error) => {
+mcpServer.start().catch(error => {
   console.error('Fatal error:', error as Error);
   process.exit(1);
 });

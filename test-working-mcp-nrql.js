@@ -12,7 +12,7 @@ try {
   // Read the current dist file
   const distPath = './dist/client/newrelic-client.js';
   let distContent = fs.readFileSync(distPath, 'utf8');
-  
+
   // Replace the incorrect GraphQL query with the correct one
   const oldQuery = `query($accountId: Int!, $nrql: Nrql!) {
           actor {
@@ -34,7 +34,7 @@ try {
             }
           }
         }`;
-        
+
   const newQuery = `query($accountId: Int!, $nrql: Nrql!) {
           actor {
             account(id: $accountId) {
@@ -50,19 +50,18 @@ try {
             }
           }
         }`;
-  
+
   // Apply the fix to use full GraphQL URL instead of relative path
   distContent = distContent.replace('/graphql', 'https://api.newrelic.com/graphql');
-  
+
   // Apply query structure fix
   distContent = distContent.replace(
     /eventTypes\s*facets\s*messages\s*{\s*level\s*description\s*}\s*}\s*totalResult\s*{\s*count/g,
     'eventTypes facets messages } totalResult'
   );
-  
+
   fs.writeFileSync(distPath, distContent);
   console.log('✅ Applied GraphQL fixes to compiled code');
-  
 } catch (error) {
   console.log('⚠️  Could not apply fixes automatically, testing anyway...');
 }
@@ -72,10 +71,10 @@ async function testWorkingMCPNRQL() {
 
   try {
     const { NewRelicMCPServer } = require('./dist/server.js');
-    
+
     const apiKey = process.env.NEW_RELIC_API_KEY;
     const accountId = '464254'; // StoreHub account
-    
+
     // Initialize server with correct configuration
     const server = new NewRelicMCPServer({
       newrelic: {
@@ -86,8 +85,8 @@ async function testWorkingMCPNRQL() {
         timeout: 30000,
       },
       logging: {
-        level: 'info'
-      }
+        level: 'info',
+      },
     });
 
     await server.initializeMCPOnly();
@@ -103,14 +102,14 @@ async function testWorkingMCPNRQL() {
         name: 'nrql_query',
         arguments: {
           query: 'SELECT count(*) FROM Transaction',
-          accountId: accountId
-        }
-      }
+          accountId: accountId,
+        },
+      },
     });
 
     const response1 = await server.handleRequest(query1);
     const data1 = JSON.parse(response1);
-    
+
     console.log('Result:', data1.result?.isError ? 'FAILED' : 'SUCCESS');
     if (data1.result && !data1.result.isError) {
       try {
@@ -134,22 +133,25 @@ async function testWorkingMCPNRQL() {
       params: {
         name: 'nrql_query',
         arguments: {
-          query: 'SELECT count(*), average(duration) FROM Transaction SINCE 1 day ago FACET appName LIMIT 3',
-          accountId: accountId
-        }
-      }
+          query:
+            'SELECT count(*), average(duration) FROM Transaction SINCE 1 day ago FACET appName LIMIT 3',
+          accountId: accountId,
+        },
+      },
     });
 
     const response2 = await server.handleRequest(query2);
     const data2 = JSON.parse(response2);
-    
+
     console.log('Result:', data2.result?.isError ? 'FAILED' : 'SUCCESS');
     if (data2.result && !data2.result.isError) {
       try {
         const result = JSON.parse(data2.result.content[0].text);
         console.log(`✅ Found ${result.results.length} applications:`);
         result.results.forEach((app, index) => {
-          console.log(`   ${index + 1}. ${app.appName}: ${app.count} transactions, ${app['average.duration']?.toFixed(3)}ms avg`);
+          console.log(
+            `   ${index + 1}. ${app.appName}: ${app.count} transactions, ${app['average.duration']?.toFixed(3)}ms avg`
+          );
         });
       } catch (e) {
         console.log(`✅ Raw result: ${data2.result.content[0].text.substring(0, 200)}...`);
@@ -168,14 +170,14 @@ async function testWorkingMCPNRQL() {
         name: 'nrql_query',
         arguments: {
           query: 'SELECT count(*) FROM Transaction SINCE 1 hour ago TIMESERIES 10 minutes',
-          accountId: accountId
-        }
-      }
+          accountId: accountId,
+        },
+      },
     });
 
     const response3 = await server.handleRequest(query3);
     const data3 = JSON.parse(response3);
-    
+
     console.log('Result:', data3.result?.isError ? 'FAILED' : 'SUCCESS');
     if (data3.result && !data3.result.isError) {
       try {
@@ -200,7 +202,6 @@ async function testWorkingMCPNRQL() {
     console.log('- Data Access: ✅ StoreHub account with millions of transactions');
     console.log('- Complex Queries: ✅ FACET, TIMESERIES, aggregations');
     console.log('\n🚀 Your NewRelic MCP server is fully functional for NRQL queries!');
-
   } catch (error) {
     console.error('❌ Error:', error.message);
     console.error(error.stack);

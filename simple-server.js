@@ -18,10 +18,18 @@ const {
 const axios = require('axios');
 
 // Configuration
-const NEW_RELIC_API_KEY = process.env.NEWRELIC_API_KEY || process.env.NEW_RELIC_API_KEY || 'INGEST-US01xa12345678901234567890123456789abc123456';
-const NEW_RELIC_ACCOUNT_ID = process.env.NEWRELIC_ACCOUNT_ID || process.env.NEW_RELIC_ACCOUNT_ID || '1234567';
-const NEW_RELIC_BASE_URL = process.env.NEWRELIC_BASE_URL || process.env.NEW_RELIC_BASE_URL || 'https://api.newrelic.com/v2';
-const NEW_RELIC_GRAPHQL_URL = process.env.NEWRELIC_GRAPHQL_URL || process.env.NEW_RELIC_GRAPHQL_URL || 'https://api.newrelic.com/graphql';
+const NEW_RELIC_API_KEY =
+  process.env.NEWRELIC_API_KEY ||
+  process.env.NEW_RELIC_API_KEY ||
+  'INGEST-US01xa12345678901234567890123456789abc123456';
+const NEW_RELIC_ACCOUNT_ID =
+  process.env.NEWRELIC_ACCOUNT_ID || process.env.NEW_RELIC_ACCOUNT_ID || '1234567';
+const NEW_RELIC_BASE_URL =
+  process.env.NEWRELIC_BASE_URL || process.env.NEW_RELIC_BASE_URL || 'https://api.newrelic.com/v2';
+const NEW_RELIC_GRAPHQL_URL =
+  process.env.NEWRELIC_GRAPHQL_URL ||
+  process.env.NEW_RELIC_GRAPHQL_URL ||
+  'https://api.newrelic.com/graphql';
 
 class SimpleNewRelicClient {
   constructor(apiKey, accountId) {
@@ -34,9 +42,9 @@ class SimpleNewRelicClient {
   async getIncidents(filters = {}) {
     try {
       // Use GraphQL API for better reliability
-      const sinceTime = filters.since || new Date(Date.now() - 24*60*60*1000).toISOString();
+      const sinceTime = filters.since || new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
       const untilTime = filters.until || new Date().toISOString();
-      
+
       const query = `
         {
           actor {
@@ -63,27 +71,31 @@ class SimpleNewRelicClient {
         }
       `;
 
-      const response = await axios.post(this.graphqlUrl, {
-        query: query
-      }, {
-        headers: {
-          'Api-Key': this.apiKey,
-          'Content-Type': 'application/json'
+      const response = await axios.post(
+        this.graphqlUrl,
+        {
+          query: query,
         },
-        timeout: 30000
-      });
+        {
+          headers: {
+            'Api-Key': this.apiKey,
+            'Content-Type': 'application/json',
+          },
+          timeout: 30000,
+        }
+      );
 
       if (response.data.errors) {
         throw new Error(`GraphQL errors: ${JSON.stringify(response.data.errors)}`);
       }
 
       let incidents = response.data.data?.actor?.account?.aiIssues?.incidents?.incidents || [];
-      
+
       // Apply filters
       if (filters.only_open) {
         incidents = incidents.filter(inc => inc.state !== 'CLOSED');
       }
-      
+
       return incidents;
     } catch (error) {
       console.error('Failed to fetch incidents:', error.message);
@@ -120,29 +132,34 @@ class SimpleNewRelicClient {
         }
       `;
 
-      const response = await axios.post(this.graphqlUrl, {
-        query: query
-      }, {
-        headers: {
-          'Api-Key': this.apiKey,
-          'Content-Type': 'application/json'
+      const response = await axios.post(
+        this.graphqlUrl,
+        {
+          query: query,
         },
-        timeout: 30000
-      });
+        {
+          headers: {
+            'Api-Key': this.apiKey,
+            'Content-Type': 'application/json',
+          },
+          timeout: 30000,
+        }
+      );
 
       if (response.data.errors) {
         throw new Error(`GraphQL errors: ${JSON.stringify(response.data.errors)}`);
       }
 
       const incidents = response.data.data?.actor?.account?.aiIssues?.incidents?.incidents || [];
-      
+
       // Filter by search term if provided
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase();
-        return incidents.filter(incident => 
-          incident.title?.toLowerCase().includes(searchLower) ||
-          incident.description?.some(desc => desc.toLowerCase().includes(searchLower)) ||
-          incident.entity?.name?.toLowerCase().includes(searchLower)
+        return incidents.filter(
+          incident =>
+            incident.title?.toLowerCase().includes(searchLower) ||
+            incident.description?.some(desc => desc.toLowerCase().includes(searchLower)) ||
+            incident.entity?.name?.toLowerCase().includes(searchLower)
         );
       }
 
@@ -174,15 +191,19 @@ class SimpleNewRelicClient {
         }
       `;
 
-      const response = await axios.post(this.graphqlUrl, {
-        query: graphqlQuery
-      }, {
-        headers: {
-          'Api-Key': this.apiKey,
-          'Content-Type': 'application/json'
+      const response = await axios.post(
+        this.graphqlUrl,
+        {
+          query: graphqlQuery,
         },
-        timeout: 30000
-      });
+        {
+          headers: {
+            'Api-Key': this.apiKey,
+            'Content-Type': 'application/json',
+          },
+          timeout: 30000,
+        }
+      );
 
       if (response.data.errors) {
         throw new Error(`NRQL errors: ${JSON.stringify(response.data.errors)}`);
@@ -206,7 +227,7 @@ const server = new Server(
     capabilities: {
       tools: {},
     },
-  },
+  }
 );
 
 // Initialize NewRelic client
@@ -222,22 +243,22 @@ const tools = [
       properties: {
         only_open: {
           type: 'boolean',
-          description: 'Only return open incidents'
+          description: 'Only return open incidents',
         },
         since: {
           type: 'string',
-          description: 'ISO timestamp for incidents since'
+          description: 'ISO timestamp for incidents since',
         },
         until: {
           type: 'string',
-          description: 'ISO timestamp for incidents until'
+          description: 'ISO timestamp for incidents until',
         },
         search: {
           type: 'string',
-          description: 'Search term to filter incidents'
-        }
-      }
-    }
+          description: 'Search term to filter incidents',
+        },
+      },
+    },
   },
   {
     name: 'search-campaign-incidents',
@@ -248,10 +269,10 @@ const tools = [
         timeRange: {
           type: 'string',
           description: 'Time range for search (e.g., "24 HOURS", "7 DAYS")',
-          default: '24 HOURS'
-        }
-      }
-    }
+          default: '24 HOURS',
+        },
+      },
+    },
   },
   {
     name: 'execute-nrql',
@@ -261,16 +282,16 @@ const tools = [
       properties: {
         query: {
           type: 'string',
-          description: 'NRQL query to execute'
+          description: 'NRQL query to execute',
         },
         accountId: {
           type: 'string',
-          description: 'NewRelic account ID (optional)'
-        }
+          description: 'NewRelic account ID (optional)',
+        },
       },
-      required: ['query']
-    }
-  }
+      required: ['query'],
+    },
+  },
 ];
 
 // List tools handler
@@ -279,48 +300,53 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 });
 
 // Call tool handler
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
+server.setRequestHandler(CallToolRequestSchema, async request => {
   const { name, arguments: args } = request.params;
-  
+
   try {
     switch (name) {
       case 'get-incidents':
         const incidents = await newRelicClient.getIncidents({
           only_open: args.only_open,
           since: args.since,
-          until: args.until
+          until: args.until,
         });
-        
+
         let filteredIncidents = incidents;
         if (args.search) {
           const searchLower = args.search.toLowerCase();
-          filteredIncidents = incidents.filter(incident =>
-            incident.description?.toLowerCase().includes(searchLower) ||
-            incident.policy_name?.toLowerCase().includes(searchLower) ||
-            incident.condition_name?.toLowerCase().includes(searchLower)
+          filteredIncidents = incidents.filter(
+            incident =>
+              incident.description?.toLowerCase().includes(searchLower) ||
+              incident.policy_name?.toLowerCase().includes(searchLower) ||
+              incident.condition_name?.toLowerCase().includes(searchLower)
           );
         }
-        
+
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify({
-                count: filteredIncidents.length,
-                incidents: filteredIncidents.map(incident => ({
-                  id: incident.id,
-                  description: incident.description,
-                  state: incident.state,
-                  priority: incident.priority,
-                  opened_at: incident.opened_at,
-                  closed_at: incident.closed_at,
-                  policy_name: incident.policy_name,
-                  condition_name: incident.condition_name,
-                  entity_name: incident.entity_name
-                }))
-              }, null, 2)
-            }
-          ]
+              text: JSON.stringify(
+                {
+                  count: filteredIncidents.length,
+                  incidents: filteredIncidents.map(incident => ({
+                    id: incident.id,
+                    description: incident.description,
+                    state: incident.state,
+                    priority: incident.priority,
+                    opened_at: incident.opened_at,
+                    closed_at: incident.closed_at,
+                    policy_name: incident.policy_name,
+                    condition_name: incident.condition_name,
+                    entity_name: incident.entity_name,
+                  })),
+                },
+                null,
+                2
+              ),
+            },
+          ],
         };
 
       case 'search-campaign-incidents':
@@ -329,23 +355,27 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify({
-                count: campaignIncidents.length,
-                incidents: campaignIncidents,
-                analysis: {
-                  summary: `Found ${campaignIncidents.length} campaign-related incidents in the last ${args.timeRange || '24 hours'}`,
-                  priorities: campaignIncidents.reduce((acc, inc) => {
-                    acc[inc.priority] = (acc[inc.priority] || 0) + 1;
-                    return acc;
-                  }, {}),
-                  states: campaignIncidents.reduce((acc, inc) => {
-                    acc[inc.state] = (acc[inc.state] || 0) + 1;
-                    return acc;
-                  }, {})
-                }
-              }, null, 2)
-            }
-          ]
+              text: JSON.stringify(
+                {
+                  count: campaignIncidents.length,
+                  incidents: campaignIncidents,
+                  analysis: {
+                    summary: `Found ${campaignIncidents.length} campaign-related incidents in the last ${args.timeRange || '24 hours'}`,
+                    priorities: campaignIncidents.reduce((acc, inc) => {
+                      acc[inc.priority] = (acc[inc.priority] || 0) + 1;
+                      return acc;
+                    }, {}),
+                    states: campaignIncidents.reduce((acc, inc) => {
+                      acc[inc.state] = (acc[inc.state] || 0) + 1;
+                      return acc;
+                    }, {}),
+                  },
+                },
+                null,
+                2
+              ),
+            },
+          ],
         };
 
       case 'execute-nrql':
@@ -354,9 +384,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(result, null, 2)
-            }
-          ]
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
         };
 
       default:
@@ -368,14 +398,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       content: [
         {
           type: 'text',
-          text: JSON.stringify({
-            error: error.message,
-            tool: name,
-            timestamp: new Date().toISOString()
-          }, null, 2)
-        }
+          text: JSON.stringify(
+            {
+              error: error.message,
+              tool: name,
+              timestamp: new Date().toISOString(),
+            },
+            null,
+            2
+          ),
+        },
       ],
-      isError: true
+      isError: true,
     };
   }
 });

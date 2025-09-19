@@ -18,23 +18,27 @@ By participating in this project, you agree to abide by our Code of Conduct. Ple
 ### Development Setup
 
 1. **Fork and clone the repository**
+
    ```bash
    git clone https://github.com/your-username/newrelic-mcp-server.git
    cd newrelic-mcp-server
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Set up environment variables**
+
    ```bash
    cp .env.example .env
    # Edit .env with your NewRelic credentials
    ```
 
 4. **Run tests**
+
    ```bash
    npm test
    ```
@@ -66,6 +70,7 @@ We follow the [Conventional Commits](https://www.conventionalcommits.org/) speci
 ```
 
 Types:
+
 - `feat`: A new feature
 - `fix`: A bug fix
 - `docs`: Documentation only changes
@@ -76,6 +81,7 @@ Types:
 - `chore`: Changes to the build process or auxiliary tools
 
 Examples:
+
 ```
 feat(api): add support for custom NRQL queries
 fix(client): handle connection timeout errors
@@ -116,6 +122,7 @@ npm run test:integration
 - Aim for high test coverage
 
 Example:
+
 ```typescript
 describe('QueryService', () => {
   it('should execute NRQL query successfully', async () => {
@@ -231,6 +238,7 @@ Releases are automated through GitHub Actions:
 ## 🙏 Recognition
 
 Contributors will be recognized in:
+
 - The project README
 - Release notes
 - GitHub contributors page

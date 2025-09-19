@@ -14,13 +14,14 @@ export class MemoryCacheManager implements CacheManager {
   private cache = new Map<string, CacheEntry<any>>();
   private defaultTTL: number;
 
-  constructor(defaultTTL = 300) { // 5 minutes default
+  constructor(defaultTTL = 300) {
+    // 5 minutes default
     this.defaultTTL = defaultTTL;
   }
 
   async get<T>(key: string): Promise<T | null> {
     const entry = this.cache.get(key);
-    
+
     if (!entry) {
       return null;
     }
@@ -49,19 +50,19 @@ export class MemoryCacheManager implements CacheManager {
   async exists(key: string): Promise<boolean> {
     const entry = this.cache.get(key);
     if (!entry) return false;
-    
+
     if (Date.now() > entry.expiresAt) {
       this.cache.delete(key);
       return false;
     }
-    
+
     return true;
   }
 
   async ttl(key: string): Promise<number> {
     const entry = this.cache.get(key);
     if (!entry) return -1;
-    
+
     const remaining = Math.max(0, entry.expiresAt - Date.now());
     return Math.floor(remaining / 1000);
   }
@@ -84,13 +85,13 @@ export class MemoryCacheManager implements CacheManager {
   async deletePattern(pattern: string): Promise<number> {
     const keysToDelete = await this.keys(pattern);
     let deletedCount = 0;
-    
+
     for (const key of keysToDelete) {
       if (await this.delete(key)) {
         deletedCount++;
       }
     }
-    
+
     return deletedCount;
   }
 }

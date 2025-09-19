@@ -61,7 +61,7 @@ async function main() {
     // Handle stdin for MCP requests (for testing)
     if (args.includes('--stdin')) {
       process.stdin.setEncoding('utf8');
-      process.stdin.on('data', async (data) => {
+      process.stdin.on('data', async data => {
         try {
           const response = await server.handleRequest(data.toString().trim());
           console.log(response);
@@ -70,7 +70,6 @@ async function main() {
         }
       });
     }
-
   } catch (error) {
     console.error('Failed to start server:', (error as Error).message);
     process.exit(1);

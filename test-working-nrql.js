@@ -10,7 +10,7 @@ async function testWorkingNRQLQueries() {
   try {
     const apiKey = process.env.NEW_RELIC_API_KEY;
     const apiUrl = process.env.NEW_RELIC_API_URL || 'https://api.newrelic.com/graphql';
-    
+
     console.log('📋 Accounts found: StoreHub (464254), Storage Account (4857544)\n');
 
     // Initialize server
@@ -23,8 +23,8 @@ async function testWorkingNRQLQueries() {
         timeout: 30000,
       },
       logging: {
-        level: 'info'
-      }
+        level: 'info',
+      },
     });
 
     await server.initializeMCPOnly();
@@ -40,9 +40,9 @@ async function testWorkingNRQLQueries() {
         name: 'nrql_query',
         arguments: {
           query: 'SELECT count(*) FROM Transaction',
-          accountId: '464254'
-        }
-      }
+          accountId: '464254',
+        },
+      },
     });
 
     console.log('  - Query: SELECT count(*) FROM Transaction');
@@ -60,9 +60,9 @@ async function testWorkingNRQLQueries() {
         name: 'nrql_query',
         arguments: {
           query: 'SELECT count(*) FROM Transaction SINCE 1 hour ago',
-          accountId: '464254'
-        }
-      }
+          accountId: '464254',
+        },
+      },
     });
 
     console.log('  - Query: SELECT count(*) FROM Transaction SINCE 1 hour ago');
@@ -79,13 +79,16 @@ async function testWorkingNRQLQueries() {
       params: {
         name: 'nrql_query',
         arguments: {
-          query: 'SELECT average(duration), count(*) FROM Transaction FACET appName SINCE 1 day ago LIMIT 5',
-          accountId: '464254'
-        }
-      }
+          query:
+            'SELECT average(duration), count(*) FROM Transaction FACET appName SINCE 1 day ago LIMIT 5',
+          accountId: '464254',
+        },
+      },
     });
 
-    console.log('  - Query: SELECT average(duration), count(*) FROM Transaction FACET appName SINCE 1 day ago LIMIT 5');
+    console.log(
+      '  - Query: SELECT average(duration), count(*) FROM Transaction FACET appName SINCE 1 day ago LIMIT 5'
+    );
     const response3 = await server.handleRequest(query3);
     const data3 = JSON.parse(response3);
     await displayResult('Test 3', data3);
@@ -100,9 +103,9 @@ async function testWorkingNRQLQueries() {
         name: 'nrql_query',
         arguments: {
           query: 'SHOW EVENT TYPES',
-          accountId: '464254'
-        }
-      }
+          accountId: '464254',
+        },
+      },
     });
 
     console.log('  - Query: SHOW EVENT TYPES');
@@ -120,16 +123,15 @@ async function testWorkingNRQLQueries() {
         name: 'nrql_query',
         arguments: {
           query: 'SELECT count(*) FROM Transaction',
-          accountId: '4857544'
-        }
-      }
+          accountId: '4857544',
+        },
+      },
     });
 
     console.log('  - Query: SELECT count(*) FROM Transaction (Storage Account)');
     const response5 = await server.handleRequest(query5);
     const data5 = JSON.parse(response5);
     await displayResult('Test 5', data5);
-
   } catch (error) {
     console.error('❌ Error:', error.message);
   }
@@ -141,7 +143,7 @@ async function displayResult(testName, data) {
     try {
       const resultText = data.result.content[0].text;
       const parsedResult = JSON.parse(resultText);
-      
+
       console.log(`  - Results: ${parsedResult.results.length} rows`);
       if (parsedResult.results.length > 0) {
         console.log(`  - Sample: ${JSON.stringify(parsedResult.results[0])}`);

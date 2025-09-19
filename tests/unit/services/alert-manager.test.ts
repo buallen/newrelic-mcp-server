@@ -9,7 +9,7 @@ import {
   AlertCondition,
   AlertConditionInput,
   NotificationChannel,
-  NotificationChannelInput
+  NotificationChannelInput,
 } from '../../../src/types/newrelic';
 
 // Mock dependencies
@@ -53,7 +53,7 @@ describe('AlertManager', () => {
       it('should create a new alert policy successfully', async () => {
         const policyInput: AlertPolicyInput = {
           name: 'Test Policy',
-          incident_preference: 'PER_POLICY'
+          incident_preference: 'PER_POLICY',
         };
 
         const mockResponse = {
@@ -62,8 +62,8 @@ describe('AlertManager', () => {
             name: 'Test Policy',
             incident_preference: 'PER_POLICY',
             created_at: '2023-01-01T00:00:00Z',
-            updated_at: '2023-01-01T00:00:00Z'
-          }
+            updated_at: '2023-01-01T00:00:00Z',
+          },
         };
 
         mockClient.post.mockResolvedValue(mockResponse);
@@ -73,8 +73,8 @@ describe('AlertManager', () => {
         expect(mockClient.post).toHaveBeenCalledWith('/alerts_policies.json', {
           policy: {
             name: 'Test Policy',
-            incident_preference: 'PER_POLICY'
-          }
+            incident_preference: 'PER_POLICY',
+          },
         });
 
         expect(result).toEqual({
@@ -82,32 +82,40 @@ describe('AlertManager', () => {
           name: 'Test Policy',
           incident_preference: 'PER_POLICY',
           created_at: '2023-01-01T00:00:00Z',
-          updated_at: '2023-01-01T00:00:00Z'
+          updated_at: '2023-01-01T00:00:00Z',
         });
 
         expect(mockCache.delete).toHaveBeenCalledWith('alert_policies');
-        expect(mockLogger.info).toHaveBeenCalledWith('Creating alert policy', { policyName: 'Test Policy' });
+        expect(mockLogger.info).toHaveBeenCalledWith('Creating alert policy', {
+          policyName: 'Test Policy',
+        });
       });
 
       it('should throw error for invalid policy input', async () => {
         const policyInput: AlertPolicyInput = {
           name: '',
-          incident_preference: 'PER_POLICY'
+          incident_preference: 'PER_POLICY',
         };
 
-        await expect(alertManager.createPolicy(policyInput)).rejects.toThrow('Policy name is required');
+        await expect(alertManager.createPolicy(policyInput)).rejects.toThrow(
+          'Policy name is required'
+        );
       });
 
       it('should handle API errors gracefully', async () => {
         const policyInput: AlertPolicyInput = {
-          name: 'Test Policy'
+          name: 'Test Policy',
         };
 
         const error = new Error('API Error');
         mockClient.post.mockRejectedValue(error);
 
-        await expect(alertManager.createPolicy(policyInput)).rejects.toThrow('Failed to create alert policy: API Error');
-        expect(mockLogger.error).toHaveBeenCalledWith('Failed to create alert policy', error, { policy: policyInput });
+        await expect(alertManager.createPolicy(policyInput)).rejects.toThrow(
+          'Failed to create alert policy: API Error'
+        );
+        expect(mockLogger.error).toHaveBeenCalledWith('Failed to create alert policy', error, {
+          policy: policyInput,
+        });
       });
     });
 
@@ -115,7 +123,7 @@ describe('AlertManager', () => {
       it('should update an existing alert policy', async () => {
         const policyId = '123';
         const updates: Partial<AlertPolicyInput> = {
-          name: 'Updated Policy Name'
+          name: 'Updated Policy Name',
         };
 
         const existingPolicy: AlertPolicy = {
@@ -123,7 +131,7 @@ describe('AlertManager', () => {
           name: 'Original Policy',
           incident_preference: 'PER_POLICY',
           created_at: '2023-01-01T00:00:00Z',
-          updated_at: '2023-01-01T00:00:00Z'
+          updated_at: '2023-01-01T00:00:00Z',
         };
 
         const mockResponse = {
@@ -132,8 +140,8 @@ describe('AlertManager', () => {
             name: 'Updated Policy Name',
             incident_preference: 'PER_POLICY',
             created_at: '2023-01-01T00:00:00Z',
-            updated_at: '2023-01-01T01:00:00Z'
-          }
+            updated_at: '2023-01-01T01:00:00Z',
+          },
         };
 
         mockCache.get.mockResolvedValue(existingPolicy);
@@ -144,8 +152,8 @@ describe('AlertManager', () => {
         expect(mockClient.put).toHaveBeenCalledWith(`/alerts_policies/${policyId}.json`, {
           policy: {
             name: 'Updated Policy Name',
-            incident_preference: 'PER_POLICY'
-          }
+            incident_preference: 'PER_POLICY',
+          },
         });
 
         expect(result.name).toBe('Updated Policy Name');
@@ -156,13 +164,15 @@ describe('AlertManager', () => {
       it('should throw error if policy not found', async () => {
         const policyId = '999';
         const updates: Partial<AlertPolicyInput> = {
-          name: 'Updated Policy Name'
+          name: 'Updated Policy Name',
         };
 
         mockCache.get.mockResolvedValue(null);
         mockClient.get.mockRejectedValue({ status: 404 });
 
-        await expect(alertManager.updatePolicy(policyId, updates)).rejects.toThrow('Alert policy with ID 999 not found');
+        await expect(alertManager.updatePolicy(policyId, updates)).rejects.toThrow(
+          'Alert policy with ID 999 not found'
+        );
       });
     });
 
@@ -175,7 +185,7 @@ describe('AlertManager', () => {
           name: 'Test Policy',
           incident_preference: 'PER_POLICY',
           created_at: '2023-01-01T00:00:00Z',
-          updated_at: '2023-01-01T00:00:00Z'
+          updated_at: '2023-01-01T00:00:00Z',
         };
 
         const conditions: AlertCondition[] = [
@@ -187,14 +197,16 @@ describe('AlertManager', () => {
             entities: ['789'],
             metric: 'response_time_web',
             condition_scope: 'application',
-            terms: [{
-              duration: 5,
-              operator: 'above',
-              priority: 'critical',
-              threshold: 1.0,
-              time_function: 'all'
-            }]
-          }
+            terms: [
+              {
+                duration: 5,
+                operator: 'above',
+                priority: 'critical',
+                threshold: 1.0,
+                time_function: 'all',
+              },
+            ],
+          },
         ];
 
         mockCache.get.mockResolvedValueOnce(existingPolicy);
@@ -219,7 +231,9 @@ describe('AlertManager', () => {
         const result = await alertManager.deletePolicy(policyId);
 
         expect(result).toBe(false);
-        expect(mockLogger.warn).toHaveBeenCalledWith('Alert policy not found for deletion', { policyId });
+        expect(mockLogger.warn).toHaveBeenCalledWith('Alert policy not found for deletion', {
+          policyId,
+        });
       });
     });
 
@@ -231,15 +245,15 @@ describe('AlertManager', () => {
             name: 'Policy 1',
             incident_preference: 'PER_POLICY',
             created_at: '2023-01-01T00:00:00Z',
-            updated_at: '2023-01-01T00:00:00Z'
+            updated_at: '2023-01-01T00:00:00Z',
           },
           {
             id: 124,
             name: 'Policy 2',
             incident_preference: 'PER_CONDITION',
             created_at: '2023-01-02T00:00:00Z',
-            updated_at: '2023-01-02T00:00:00Z'
-          }
+            updated_at: '2023-01-02T00:00:00Z',
+          },
         ];
 
         const mockResponse = { policies: mockPolicies };
@@ -263,8 +277,8 @@ describe('AlertManager', () => {
             name: 'Cached Policy',
             incident_preference: 'PER_POLICY',
             created_at: '2023-01-01T00:00:00Z',
-            updated_at: '2023-01-01T00:00:00Z'
-          }
+            updated_at: '2023-01-01T00:00:00Z',
+          },
         ];
 
         mockCache.get.mockResolvedValue(cachedPolicies);
@@ -285,7 +299,9 @@ describe('AlertManager', () => {
 
         await alertManager.getPolicies(filters);
 
-        expect(mockClient.get).toHaveBeenCalledWith('/alerts_policies.json?filter%5Bname%5D=Test+Policy&filter%5Benabled%5D=true');
+        expect(mockClient.get).toHaveBeenCalledWith(
+          '/alerts_policies.json?filter%5Bname%5D=Test+Policy&filter%5Benabled%5D=true'
+        );
       });
     });
   });
@@ -301,13 +317,15 @@ describe('AlertManager', () => {
           entities: ['789'],
           metric: 'response_time_web',
           condition_scope: 'application',
-          terms: [{
-            duration: 5,
-            operator: 'above',
-            priority: 'critical',
-            threshold: 1.0,
-            time_function: 'all'
-          }]
+          terms: [
+            {
+              duration: 5,
+              operator: 'above',
+              priority: 'critical',
+              threshold: 1.0,
+              time_function: 'all',
+            },
+          ],
         };
 
         const mockResponse = {
@@ -319,38 +337,45 @@ describe('AlertManager', () => {
             entities: ['789'],
             metric: 'response_time_web',
             condition_scope: 'application',
-            terms: [{
-              duration: 5,
-              operator: 'above',
-              priority: 'critical',
-              threshold: 1.0,
-              time_function: 'all'
-            }]
-          }
+            terms: [
+              {
+                duration: 5,
+                operator: 'above',
+                priority: 'critical',
+                threshold: 1.0,
+                time_function: 'all',
+              },
+            ],
+          },
         };
 
         mockClient.post.mockResolvedValue(mockResponse);
 
         const result = await alertManager.createCondition(policyId, conditionInput);
 
-        expect(mockClient.post).toHaveBeenCalledWith(`/alerts_conditions/policies/${policyId}.json`, {
-          condition: {
-            type: 'apm_app_metric',
-            name: 'Test Condition',
-            enabled: true,
-            entities: ['789'],
-            metric: 'response_time_web',
-            condition_scope: 'application',
-            terms: [{
-              duration: 5,
-              operator: 'above',
-              priority: 'critical',
-              threshold: 1.0,
-              time_function: 'all'
-            }],
-            user_defined: undefined
+        expect(mockClient.post).toHaveBeenCalledWith(
+          `/alerts_conditions/policies/${policyId}.json`,
+          {
+            condition: {
+              type: 'apm_app_metric',
+              name: 'Test Condition',
+              enabled: true,
+              entities: ['789'],
+              metric: 'response_time_web',
+              condition_scope: 'application',
+              terms: [
+                {
+                  duration: 5,
+                  operator: 'above',
+                  priority: 'critical',
+                  threshold: 1.0,
+                  time_function: 'all',
+                },
+              ],
+              user_defined: undefined,
+            },
           }
-        });
+        );
 
         expect(result.id).toBe('456');
         expect(result.name).toBe('Test Condition');
@@ -364,10 +389,12 @@ describe('AlertManager', () => {
           name: '',
           entities: [],
           metric: 'response_time_web',
-          terms: []
+          terms: [],
         };
 
-        await expect(alertManager.createCondition(policyId, invalidCondition)).rejects.toThrow('Condition name is required');
+        await expect(alertManager.createCondition(policyId, invalidCondition)).rejects.toThrow(
+          'Condition name is required'
+        );
       });
 
       it('should validate term parameters', async () => {
@@ -377,16 +404,20 @@ describe('AlertManager', () => {
           name: 'Test Condition',
           entities: ['789'],
           metric: 'response_time_web',
-          terms: [{
-            duration: 2, // Invalid: less than 5 minutes
-            operator: 'above',
-            priority: 'critical',
-            threshold: 1.0,
-            time_function: 'all'
-          }]
+          terms: [
+            {
+              duration: 2, // Invalid: less than 5 minutes
+              operator: 'above',
+              priority: 'critical',
+              threshold: 1.0,
+              time_function: 'all',
+            },
+          ],
         };
 
-        await expect(alertManager.createCondition(policyId, conditionWithInvalidTerm)).rejects.toThrow('Term duration must be at least 5 minutes');
+        await expect(
+          alertManager.createCondition(policyId, conditionWithInvalidTerm)
+        ).rejects.toThrow('Term duration must be at least 5 minutes');
       });
     });
 
@@ -402,14 +433,16 @@ describe('AlertManager', () => {
             entities: ['789'],
             metric: 'response_time_web',
             condition_scope: 'application',
-            terms: [{
-              duration: 5,
-              operator: 'above',
-              priority: 'critical',
-              threshold: 1.0,
-              time_function: 'all'
-            }]
-          }
+            terms: [
+              {
+                duration: 5,
+                operator: 'above',
+                priority: 'critical',
+                threshold: 1.0,
+                time_function: 'all',
+              },
+            ],
+          },
         ];
 
         const mockResponse = { conditions: mockConditions };
@@ -421,7 +454,9 @@ describe('AlertManager', () => {
 
         expect(result).toHaveLength(1);
         expect(result[0].id).toBe('456');
-        expect(mockClient.get).toHaveBeenCalledWith(`/alerts_conditions.json?policy_id=${policyId}`);
+        expect(mockClient.get).toHaveBeenCalledWith(
+          `/alerts_conditions.json?policy_id=${policyId}`
+        );
         expect(mockCache.set).toHaveBeenCalledWith(`alert_conditions_${policyId}`, result, 300);
       });
 
@@ -436,14 +471,16 @@ describe('AlertManager', () => {
             entities: ['789'],
             metric: 'response_time_web',
             condition_scope: 'application',
-            terms: [{
-              duration: 5,
-              operator: 'above',
-              priority: 'critical',
-              threshold: 1.0,
-              time_function: 'all'
-            }]
-          }
+            terms: [
+              {
+                duration: 5,
+                operator: 'above',
+                priority: 'critical',
+                threshold: 1.0,
+                time_function: 'all',
+              },
+            ],
+          },
         ];
 
         mockCache.get.mockResolvedValue(cachedConditions);
@@ -452,7 +489,9 @@ describe('AlertManager', () => {
 
         expect(result).toEqual(cachedConditions);
         expect(mockClient.get).not.toHaveBeenCalled();
-        expect(mockLogger.debug).toHaveBeenCalledWith('Retrieved alert conditions from cache', { policyId });
+        expect(mockLogger.debug).toHaveBeenCalledWith('Retrieved alert conditions from cache', {
+          policyId,
+        });
       });
     });
   });
@@ -464,8 +503,8 @@ describe('AlertManager', () => {
           name: 'Test Email Channel',
           type: 'email',
           configuration: {
-            recipients: 'test@example.com'
-          }
+            recipients: 'test@example.com',
+          },
         };
 
         const mockResponse = {
@@ -474,11 +513,11 @@ describe('AlertManager', () => {
             name: 'Test Email Channel',
             type: 'email',
             configuration: {
-              recipients: 'test@example.com'
+              recipients: 'test@example.com',
             },
             created_at: '2023-01-01T00:00:00Z',
-            updated_at: '2023-01-01T00:00:00Z'
-          }
+            updated_at: '2023-01-01T00:00:00Z',
+          },
         };
 
         mockClient.post.mockResolvedValue(mockResponse);
@@ -490,9 +529,9 @@ describe('AlertManager', () => {
             name: 'Test Email Channel',
             type: 'email',
             configuration: {
-              recipients: 'test@example.com'
-            }
-          }
+              recipients: 'test@example.com',
+            },
+          },
         });
 
         expect(result.id).toBe('789');
@@ -504,26 +543,32 @@ describe('AlertManager', () => {
         const invalidEmailChannel: NotificationChannelInput = {
           name: 'Invalid Email Channel',
           type: 'email',
-          configuration: {} // Missing recipients
+          configuration: {}, // Missing recipients
         };
 
-        await expect(alertManager.createNotificationChannel(invalidEmailChannel)).rejects.toThrow('Email recipients are required');
+        await expect(alertManager.createNotificationChannel(invalidEmailChannel)).rejects.toThrow(
+          'Email recipients are required'
+        );
 
         const invalidSlackChannel: NotificationChannelInput = {
           name: 'Invalid Slack Channel',
           type: 'slack',
-          configuration: {} // Missing url
+          configuration: {}, // Missing url
         };
 
-        await expect(alertManager.createNotificationChannel(invalidSlackChannel)).rejects.toThrow('Slack webhook URL is required');
+        await expect(alertManager.createNotificationChannel(invalidSlackChannel)).rejects.toThrow(
+          'Slack webhook URL is required'
+        );
 
         const invalidWebhookChannel: NotificationChannelInput = {
           name: 'Invalid Webhook Channel',
           type: 'webhook',
-          configuration: {} // Missing base_url
+          configuration: {}, // Missing base_url
         };
 
-        await expect(alertManager.createNotificationChannel(invalidWebhookChannel)).rejects.toThrow('Webhook base URL is required');
+        await expect(alertManager.createNotificationChannel(invalidWebhookChannel)).rejects.toThrow(
+          'Webhook base URL is required'
+        );
       });
     });
 
@@ -536,7 +581,7 @@ describe('AlertManager', () => {
             type: 'email',
             configuration: { recipients: 'test@example.com' },
             created_at: '2023-01-01T00:00:00Z',
-            updated_at: '2023-01-01T00:00:00Z'
+            updated_at: '2023-01-01T00:00:00Z',
           },
           {
             id: 790,
@@ -544,8 +589,8 @@ describe('AlertManager', () => {
             type: 'slack',
             configuration: { url: 'https://hooks.slack.com/webhook' },
             created_at: '2023-01-02T00:00:00Z',
-            updated_at: '2023-01-02T00:00:00Z'
-          }
+            updated_at: '2023-01-02T00:00:00Z',
+          },
         ];
 
         const mockResponse = { channels: mockChannels };
@@ -573,7 +618,9 @@ describe('AlertManager', () => {
         const result = await alertManager.associateChannelWithPolicy(policyId, channelId);
 
         expect(result).toBe(true);
-        expect(mockClient.put).toHaveBeenCalledWith(`/alerts_policy_channels.json?policy_id=${policyId}&channel_ids=${channelId}`);
+        expect(mockClient.put).toHaveBeenCalledWith(
+          `/alerts_policy_channels.json?policy_id=${policyId}&channel_ids=${channelId}`
+        );
         expect(mockCache.delete).toHaveBeenCalledWith(`alert_policy_${policyId}`);
         expect(mockCache.delete).toHaveBeenCalledWith('alert_policies');
       });
@@ -589,7 +636,9 @@ describe('AlertManager', () => {
         const result = await alertManager.disassociateChannelFromPolicy(policyId, channelId);
 
         expect(result).toBe(true);
-        expect(mockClient.delete).toHaveBeenCalledWith(`/alerts_policy_channels.json?policy_id=${policyId}&channel_id=${channelId}`);
+        expect(mockClient.delete).toHaveBeenCalledWith(
+          `/alerts_policy_channels.json?policy_id=${policyId}&channel_id=${channelId}`
+        );
         expect(mockCache.delete).toHaveBeenCalledWith(`alert_policy_${policyId}`);
         expect(mockCache.delete).toHaveBeenCalledWith('alert_policies');
       });
@@ -599,14 +648,18 @@ describe('AlertManager', () => {
   describe('Error Handling', () => {
     it('should handle network errors gracefully', async () => {
       const policyInput: AlertPolicyInput = {
-        name: 'Test Policy'
+        name: 'Test Policy',
       };
 
       const networkError = new Error('Network timeout');
       mockClient.post.mockRejectedValue(networkError);
 
-      await expect(alertManager.createPolicy(policyInput)).rejects.toThrow('Failed to create alert policy: Network timeout');
-      expect(mockLogger.error).toHaveBeenCalledWith('Failed to create alert policy', networkError, { policy: policyInput });
+      await expect(alertManager.createPolicy(policyInput)).rejects.toThrow(
+        'Failed to create alert policy: Network timeout'
+      );
+      expect(mockLogger.error).toHaveBeenCalledWith('Failed to create alert policy', networkError, {
+        policy: policyInput,
+      });
     });
 
     it('should handle API validation errors', async () => {
@@ -615,22 +668,26 @@ describe('AlertManager', () => {
         name: 'Test Condition',
         entities: ['invalid-entity'],
         metric: 'invalid_metric',
-        terms: [{
-          duration: 5,
-          operator: 'above',
-          priority: 'critical',
-          threshold: 1.0,
-          time_function: 'all'
-        }]
+        terms: [
+          {
+            duration: 5,
+            operator: 'above',
+            priority: 'critical',
+            threshold: 1.0,
+            time_function: 'all',
+          },
+        ],
       };
 
       const validationError = {
         status: 422,
-        message: 'Invalid entity ID'
+        message: 'Invalid entity ID',
       };
       mockClient.post.mockRejectedValue(validationError);
 
-      await expect(alertManager.createCondition('123', conditionInput)).rejects.toThrow('Failed to create alert condition: Invalid entity ID');
+      await expect(alertManager.createCondition('123', conditionInput)).rejects.toThrow(
+        'Failed to create alert condition: Invalid entity ID'
+      );
     });
   });
 });

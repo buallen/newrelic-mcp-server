@@ -107,10 +107,7 @@ describe('NewRelicClient', () => {
       const result = await client.authenticate('invalid-key');
 
       expect(result).toBe(false);
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        'Authentication failed',
-        expect.any(Error)
-      );
+      expect(mockLogger.error).toHaveBeenCalledWith('Authentication failed', expect.any(Error));
     });
 
     it('should validate permissions', async () => {
@@ -181,9 +178,9 @@ describe('NewRelicClient', () => {
         },
       });
 
-      await expect(
-        client.executeNRQL({ query: 'INVALID QUERY' })
-      ).rejects.toThrow('NRQL query failed: Invalid query syntax');
+      await expect(client.executeNRQL({ query: 'INVALID QUERY' })).rejects.toThrow(
+        'NRQL query failed: Invalid query syntax'
+      );
     });
 
     it('should validate query successfully', async () => {
@@ -343,13 +340,15 @@ describe('NewRelicClient', () => {
         entities: ['app-1'],
         metric: 'response_time_web',
         condition_scope: 'application',
-        terms: [{
-          duration: '5',
-          operator: 'above',
-          priority: 'critical',
-          threshold: '1.0',
-          time_function: 'all',
-        }],
+        terms: [
+          {
+            duration: '5',
+            operator: 'above',
+            priority: 'critical',
+            threshold: '1.0',
+            time_function: 'all',
+          },
+        ],
       };
 
       const mockCreatedCondition = { id: '1', ...conditionInput };

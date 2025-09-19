@@ -13,18 +13,18 @@ async function testLimitMax() {
     stdio: ['pipe', 'pipe', 'pipe'],
     env: {
       ...process.env,
-      NEW_RELIC_API_KEY: process.env.NEW_RELIC_API_KEY
-    }
+      NEW_RELIC_API_KEY: process.env.NEW_RELIC_API_KEY,
+    },
   });
 
   let responseBuffer = '';
-  
+
   // Set up response handling
-  server.stdout.on('data', (data) => {
+  server.stdout.on('data', data => {
     responseBuffer += data.toString();
   });
 
-  server.stderr.on('data', (data) => {
+  server.stderr.on('data', data => {
     console.error('Server Error:', data.toString());
   });
 
@@ -36,9 +36,9 @@ async function testLimitMax() {
       }, 10000); // Increased timeout for large queries
 
       const originalLength = responseBuffer.length;
-      
+
       server.stdin.write(JSON.stringify(request) + '\n');
-      
+
       // Wait for response
       const checkResponse = () => {
         if (responseBuffer.length > originalLength) {
@@ -58,7 +58,7 @@ async function testLimitMax() {
           setTimeout(checkResponse, 100);
         }
       };
-      
+
       setTimeout(checkResponse, 100);
     });
   }
@@ -75,15 +75,15 @@ async function testLimitMax() {
       params: {
         protocolVersion: '2024-11-05',
         capabilities: {},
-        clientInfo: { name: 'test-client', version: '1.0.0' }
-      }
+        clientInfo: { name: 'test-client', version: '1.0.0' },
+      },
     });
 
     console.log('✅ MCP Server initialized\n');
 
     // Test 1: Standard LIMIT vs LIMIT MAX comparison
     console.log('📊 Test 1: Comparing Standard LIMIT vs LIMIT MAX');
-    
+
     // Standard limit
     const standardResponse = await sendRequest({
       jsonrpc: '2.0',
@@ -93,11 +93,11 @@ async function testLimitMax() {
         name: 'nrql_query',
         arguments: {
           query: 'SELECT timestamp FROM Log',
-          limit: 10
-        }
-      }
+          limit: 10,
+        },
+      },
     });
-    
+
     const standardResult = JSON.parse(standardResponse.result.content[0].text);
     console.log(`✅ Standard LIMIT 10: ${standardResult.results.length} results`);
 
@@ -110,15 +110,17 @@ async function testLimitMax() {
         name: 'nrql_query',
         arguments: {
           query: 'SELECT timestamp FROM Log',
-          limit: 'MAX'
-        }
-      }
+          limit: 'MAX',
+        },
+      },
     });
-    
+
     const maxResult = JSON.parse(maxResponse.result.content[0].text);
     console.log(`✅ LIMIT MAX: ${maxResult.results.length} results`);
     console.log(`   Query executed: ${maxResult.query}`);
-    console.log(`   📈 MAX returned ${maxResult.results.length - standardResult.results.length} more results\n`);
+    console.log(
+      `   📈 MAX returned ${maxResult.results.length - standardResult.results.length} more results\n`
+    );
 
     // Test 2: Log query with LIMIT MAX
     console.log('📊 Test 2: Log Query with LIMIT MAX');
@@ -131,11 +133,11 @@ async function testLimitMax() {
         arguments: {
           query_type: 'recent_logs',
           time_period: '7 days ago',
-          limit: 'MAX'
-        }
-      }
+          limit: 'MAX',
+        },
+      },
     });
-    
+
     const logMaxResult = JSON.parse(logMaxResponse.result.content[0].text);
     console.log(`✅ Log Query LIMIT MAX: ${logMaxResult.logs.length} results`);
     console.log(`   Query executed: ${logMaxResult.query_executed}\n`);
@@ -152,11 +154,11 @@ async function testLimitMax() {
           query_type: 'application_logs',
           application_name: 'StoreHub',
           time_period: '7 days ago',
-          limit: 'MAX'
-        }
-      }
+          limit: 'MAX',
+        },
+      },
     });
-    
+
     const appMaxResult = JSON.parse(appMaxResponse.result.content[0].text);
     console.log(`✅ Application Logs LIMIT MAX: ${appMaxResult.logs.length} results`);
     console.log(`   Query executed: ${appMaxResult.query_executed}\n`);
@@ -171,26 +173,29 @@ async function testLimitMax() {
         name: 'nrql_query',
         arguments: {
           query: 'SELECT count(*) FROM Log',
-          limit: 1
-        }
-      }
+          limit: 1,
+        },
+      },
     });
-    
+
     const countResult = JSON.parse(countResponse.result.content[0].text);
     const totalLogs = countResult.results[0].count;
     console.log(`✅ Total logs available: ${totalLogs.toLocaleString()}`);
-    console.log(`   LIMIT MAX retrieved: ${maxResult.results.length} (${((maxResult.results.length / totalLogs) * 100).toFixed(1)}%)\n`);
+    console.log(
+      `   LIMIT MAX retrieved: ${maxResult.results.length} (${((maxResult.results.length / totalLogs) * 100).toFixed(1)}%)\n`
+    );
 
     console.log('🎯 LIMIT MAX Test Results:');
     console.log(`✅ LIMIT MAX functionality working correctly`);
     console.log(`✅ Returns maximum possible results (up to NewRelic API limits)`);
     console.log(`✅ Works with both nrql_query and log_query tools`);
     console.log(`✅ Translates MAX to LIMIT 2000 in NRQL queries`);
-    
-    if (maxResult.results.length > standardResult.results.length) {
-      console.log(`🚀 Success: LIMIT MAX returns ${maxResult.results.length - standardResult.results.length} more results than standard limit!`);
-    }
 
+    if (maxResult.results.length > standardResult.results.length) {
+      console.log(
+        `🚀 Success: LIMIT MAX returns ${maxResult.results.length - standardResult.results.length} more results than standard limit!`
+      );
+    }
   } catch (error) {
     console.error('❌ Test failed:', error.message);
   } finally {

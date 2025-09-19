@@ -39,7 +39,7 @@ export class NewRelicMCPServer {
     this.config = { ...defaultConfig, ...config };
     this.logger = new ConsoleLogger(this.config.logging.level);
     this.cacheManager = new MemoryCacheManager(this.config.cache.ttl);
-    
+
     const newRelicConfig: NewRelicClientConfig = {
       apiKey: this.config.newrelic.apiKey || '',
       baseUrl: this.config.newrelic.baseUrl || 'https://api.newrelic.com/v2',
@@ -54,7 +54,11 @@ export class NewRelicMCPServer {
     this.newRelicClient = new NewRelicClientImpl(newRelicConfig, this.logger);
     this.queryService = new QueryServiceImpl(this.newRelicClient, this.cacheManager, this.logger);
     this.alertManager = new AlertManager(this.newRelicClient, this.logger, this.cacheManager);
-    this.incidentAnalyzer = new IncidentAnalyzer(this.newRelicClient, this.logger, this.cacheManager);
+    this.incidentAnalyzer = new IncidentAnalyzer(
+      this.newRelicClient,
+      this.logger,
+      this.cacheManager
+    );
     this.nrqlTool = new NRQLTool(this.queryService);
     this.alertPolicyTool = new AlertPolicyTool(this.alertManager);
     this.incidentAnalyzerTool = new IncidentAnalyzerTool(this.incidentAnalyzer);
@@ -114,17 +118,17 @@ export class NewRelicMCPServer {
 
   private registerHandlers(): void {
     // Register MCP protocol handlers
-    this.router.registerHandler('initialize', (request) => 
+    this.router.registerHandler('initialize', request =>
       this.protocolHandler.handleInitialize(request as any)
     );
-    
-    this.router.registerHandler('tools/list', (request) => 
+
+    this.router.registerHandler('tools/list', request =>
       this.protocolHandler.handleToolsList(request as any)
     );
-    
-    this.router.registerHandler('tools/call', async (request) => {
+
+    this.router.registerHandler('tools/call', async request => {
       const toolRequest = request as any;
-      
+
       switch (toolRequest.params.name) {
         case 'nrql_query':
           return await this.nrqlTool.execute(toolRequest);
@@ -138,12 +142,12 @@ export class NewRelicMCPServer {
           return this.protocolHandler.handleToolCall(toolRequest);
       }
     });
-    
-    this.router.registerHandler('resources/list', (request) => 
+
+    this.router.registerHandler('resources/list', request =>
       this.protocolHandler.handleResourcesList(request as any)
     );
-    
-    this.router.registerHandler('resources/read', (request) => 
+
+    this.router.registerHandler('resources/read', request =>
       this.protocolHandler.handleResourceRead(request as any)
     );
   }
@@ -155,7 +159,7 @@ export class NewRelicMCPServer {
       return this.protocolHandler.serializeResponse(response);
     } catch (error) {
       this.logger.error('Error handling request', error as Error);
-      
+
       // Return error response
       const errorResponse = {
         jsonrpc: '2.0' as const,
@@ -170,7 +174,7 @@ export class NewRelicMCPServer {
           },
         },
       };
-      
+
       return this.protocolHandler.serializeResponse(errorResponse);
     }
   }
@@ -186,12 +190,12 @@ export class NewRelicMCPServer {
 
   async shutdown(): Promise<void> {
     this.logger.info('Shutting down NewRelic MCP Server');
-    
+
     try {
       await this.protocolHandler.shutdown();
       await this.cacheManager.clear();
       this.initialized = false;
-      
+
       this.logger.info('NewRelic MCP Server shutdown complete');
     } catch (error) {
       this.logger.error('Error during shutdown', error as Error);
@@ -202,7 +206,7 @@ export class NewRelicMCPServer {
   async healthCheck(): Promise<{ status: 'healthy' | 'unhealthy'; details: any }> {
     try {
       const newRelicStatus = await this.newRelicClient.getApiStatus();
-      
+
       return {
         status: newRelicStatus.connected ? 'healthy' : 'unhealthy',
         details: {

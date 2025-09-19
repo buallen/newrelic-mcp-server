@@ -65,37 +65,37 @@ export interface AdvancedCacheManagerInterface {
   getWithMetrics(key: string): Promise<{ value: any; metrics: CacheEntryMetrics }>;
   mget(keys: string[]): Promise<Map<string, any>>;
   mset(entries: Map<string, any>, ttl?: number): Promise<void>;
-  
+
   // Cache strategies
   registerStrategy(name: string, strategy: CacheStrategy): void;
   getStrategy(name: string): CacheStrategy | null;
   listStrategies(): CacheStrategy[];
-  
+
   // Cache invalidation
   invalidateByPattern(pattern: string): Promise<number>;
   invalidateByTags(tags: string[]): Promise<number>;
   addInvalidationRule(rule: CacheInvalidationRule): void;
   triggerInvalidation(trigger: string): Promise<void>;
-  
+
   // Cache warming
   configureWarmup(config: CacheWarmupConfig): void;
   warmupCache(strategyName?: string): Promise<void>;
   scheduleWarmup(): void;
-  
+
   // Performance optimization
   optimizeCache(): Promise<CacheOptimizationResult>;
   compactCache(): Promise<void>;
   analyzeCacheUsage(): Promise<CacheUsageAnalysis>;
-  
+
   // Monitoring and metrics
   getMetrics(): Promise<CacheMetrics>;
   getDetailedMetrics(): Promise<DetailedCacheMetrics>;
   resetMetrics(): Promise<void>;
-  
+
   // Cache partitioning
   createPartition(name: string, config: PartitionConfig): Promise<void>;
   getPartition(name: string): AdvancedCacheManager | null;
-  
+
   // Distributed caching
   enableDistribution(config: DistributionConfig): Promise<void>;
   syncWithPeers(): Promise<void>;
@@ -223,7 +223,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
   constructor(baseCache: CacheManager, logger: Logger) {
     this.baseCache = baseCache;
     this.logger = logger;
-    
+
     // Initialize default metrics
     this.metrics = {
       hitRate: 0,
@@ -235,7 +235,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
       cacheSize: 0,
       memoryUsage: 0,
       evictionCount: 0,
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
     };
 
     // Register default strategies
@@ -244,7 +244,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
 
   async setWithStrategy(key: string, value: any, strategyName: string): Promise<void> {
     const startTime = Date.now();
-    
+
     try {
       const strategy = this.strategies.get(strategyName);
       if (!strategy) {
@@ -254,7 +254,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
       // Apply compression if enabled
       let processedValue = value;
       let compressed = false;
-      
+
       if (strategy.compressionEnabled) {
         processedValue = await this.compressValue(value);
         compressed = true;
@@ -270,7 +270,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
         accessCount: 0,
         size: this.calculateSize(processedValue),
         compressed,
-        tags: this.extractTags(key)
+        tags: this.extractTags(key),
       };
 
       // Store in base cache
@@ -283,30 +283,36 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
         lastHit: 0,
         createdAt: entry.createdAt,
         size: entry.size,
-        ttlRemaining: strategy.ttl
+        ttlRemaining: strategy.ttl,
       });
 
-      this.logger.debug('Cache entry set with strategy', { 
-        key, 
-        strategy: strategyName, 
+      this.logger.debug('Cache entry set with strategy', {
+        key,
+        strategy: strategyName,
         size: entry.size,
-        compressed 
+        compressed,
       });
     } catch (error) {
-      this.logger.error('Failed to set cache entry with strategy', error as Error, { key, strategyName });
+      this.logger.error('Failed to set cache entry with strategy', error as Error, {
+        key,
+        strategyName,
+      });
       throw error;
     }
   }
 
   async getWithMetrics(key: string): Promise<{ value: any; metrics: CacheEntryMetrics }> {
     const startTime = Date.now();
-    
+
     try {
       const entry = await this.baseCache.get<CacheEntry>(key);
-      
+
       if (!entry) {
         this.updateMetrics('miss', Date.now() - startTime);
-        return { value: null, metrics: { hitCount: 0, lastHit: 0, createdAt: 0, size: 0, ttlRemaining: 0 } };
+        return {
+          value: null,
+          metrics: { hitCount: 0, lastHit: 0, createdAt: 0, size: 0, ttlRemaining: 0 },
+        };
       }
 
       // Update access metrics
@@ -325,7 +331,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
         lastHit: entry.lastAccessed,
         createdAt: entry.createdAt,
         size: entry.size,
-        ttlRemaining: Math.max(0, entry.ttl - (Date.now() - entry.createdAt) / 1000)
+        ttlRemaining: Math.max(0, entry.ttl - (Date.now() - entry.createdAt) / 1000),
       };
 
       this.detailedMetrics.set(key, entryMetrics);
@@ -335,10 +341,10 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
 
       this.updateMetrics('hit', Date.now() - startTime);
 
-      this.logger.debug('Cache entry retrieved with metrics', { 
-        key, 
+      this.logger.debug('Cache entry retrieved with metrics', {
+        key,
         hitCount: entry.accessCount,
-        size: entry.size 
+        size: entry.size,
       });
 
       return { value, metrics: entryMetrics };
@@ -352,26 +358,26 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
   async mget(keys: string[]): Promise<Map<string, any>> {
     const startTime = Date.now();
     const results = new Map<string, any>();
-    
+
     try {
       // Get all entries in parallel
-      const promises = keys.map(async (key) => {
+      const promises = keys.map(async key => {
         const result = await this.getWithMetrics(key);
         return { key, value: result.value };
       });
 
       const responses = await Promise.all(promises);
-      
+
       for (const response of responses) {
         if (response.value !== null) {
           results.set(response.key, response.value);
         }
       }
 
-      this.logger.debug('Multi-get operation completed', { 
+      this.logger.debug('Multi-get operation completed', {
         requestedKeys: keys.length,
         foundKeys: results.size,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       });
 
       return results;
@@ -383,19 +389,19 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
 
   async mset(entries: Map<string, any>, ttl: number = 300): Promise<void> {
     const startTime = Date.now();
-    
+
     try {
       // Set all entries in parallel
-      const promises = Array.from(entries.entries()).map(([key, value]) => 
+      const promises = Array.from(entries.entries()).map(([key, value]) =>
         this.baseCache.set(key, value, ttl)
       );
 
       await Promise.all(promises);
 
-      this.logger.debug('Multi-set operation completed', { 
+      this.logger.debug('Multi-set operation completed', {
         entryCount: entries.size,
         ttl,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       });
     } catch (error) {
       this.logger.error('Failed to perform multi-set operation', error as Error);
@@ -419,14 +425,14 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
   async invalidateByPattern(pattern: string): Promise<number> {
     try {
       this.logger.info('Invalidating cache entries by pattern', { pattern });
-      
+
       // Get all keys (this would need to be implemented in base cache)
       const keys = await this.getAllKeys();
       const regex = new RegExp(pattern);
-      
+
       let invalidatedCount = 0;
       const promises: Promise<void>[] = [];
-      
+
       for (const key of keys) {
         if (regex.test(key)) {
           promises.push(this.baseCache.delete(key));
@@ -434,14 +440,14 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
           invalidatedCount++;
         }
       }
-      
+
       await Promise.all(promises);
-      
-      this.logger.info('Cache invalidation by pattern completed', { 
-        pattern, 
-        invalidatedCount 
+
+      this.logger.info('Cache invalidation by pattern completed', {
+        pattern,
+        invalidatedCount,
       });
-      
+
       return invalidatedCount;
     } catch (error) {
       this.logger.error('Failed to invalidate cache by pattern', error, { pattern });
@@ -452,11 +458,11 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
   async invalidateByTags(tags: string[]): Promise<number> {
     try {
       this.logger.info('Invalidating cache entries by tags', { tags });
-      
+
       const keys = await this.getAllKeys();
       let invalidatedCount = 0;
       const promises: Promise<void>[] = [];
-      
+
       for (const key of keys) {
         const entry = await this.baseCache.get<CacheEntry>(key);
         if (entry && entry.tags && entry.tags.some(tag => tags.includes(tag))) {
@@ -465,14 +471,14 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
           invalidatedCount++;
         }
       }
-      
+
       await Promise.all(promises);
-      
-      this.logger.info('Cache invalidation by tags completed', { 
-        tags, 
-        invalidatedCount 
+
+      this.logger.info('Cache invalidation by tags completed', {
+        tags,
+        invalidatedCount,
       });
-      
+
       return invalidatedCount;
     } catch (error) {
       this.logger.error('Failed to invalidate cache by tags', error, { tags });
@@ -488,23 +494,23 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
   async triggerInvalidation(trigger: string): Promise<void> {
     try {
       this.logger.info('Triggering cache invalidation', { trigger });
-      
-      const applicableRules = this.invalidationRules.filter(rule => 
+
+      const applicableRules = this.invalidationRules.filter(rule =>
         rule.triggers.includes(trigger)
       );
-      
+
       for (const rule of applicableRules) {
         await this.invalidateByPattern(rule.pattern);
-        
+
         if (rule.cascadeInvalidation) {
           // Implement cascade invalidation logic
           await this.cascadeInvalidation(rule.pattern);
         }
       }
-      
-      this.logger.info('Cache invalidation trigger completed', { 
-        trigger, 
-        rulesApplied: applicableRules.length 
+
+      this.logger.info('Cache invalidation trigger completed', {
+        trigger,
+        rulesApplied: applicableRules.length,
       });
     } catch (error) {
       this.logger.error('Failed to trigger cache invalidation', error, { trigger });
@@ -515,7 +521,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
   configureWarmup(config: CacheWarmupConfig): void {
     this.warmupConfig = config;
     this.logger.info('Cache warmup configured', { config });
-    
+
     if (config.enabled) {
       this.scheduleWarmup();
     }
@@ -529,20 +535,20 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
       }
 
       this.logger.info('Starting cache warmup', { strategyName });
-      
-      const strategies = strategyName 
+
+      const strategies = strategyName
         ? this.warmupConfig.strategies.filter(s => s.name === strategyName)
         : this.warmupConfig.strategies;
-      
+
       // Sort by priority
       strategies.sort((a, b) => b.priority - a.priority);
-      
+
       for (const strategy of strategies) {
         await this.executeWarmupStrategy(strategy);
       }
-      
-      this.logger.info('Cache warmup completed', { 
-        strategiesExecuted: strategies.length 
+
+      this.logger.info('Cache warmup completed', {
+        strategiesExecuted: strategies.length,
       });
     } catch (error) {
       this.logger.error('Failed to warmup cache', error, { strategyName });
@@ -556,46 +562,46 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
     }
 
     // This would integrate with a job scheduler like node-cron
-    this.logger.info('Cache warmup scheduled', { 
-      schedule: this.warmupConfig.schedule 
+    this.logger.info('Cache warmup scheduled', {
+      schedule: this.warmupConfig.schedule,
     });
   }
 
   async optimizeCache(): Promise<CacheOptimizationResult> {
     try {
       this.logger.info('Starting cache optimization');
-      
+
       const optimizationsApplied: string[] = [];
       let memoryFreed = 0;
       const recommendations: string[] = [];
-      
+
       // Remove expired entries
       const expiredCount = await this.removeExpiredEntries();
       if (expiredCount > 0) {
         optimizationsApplied.push(`Removed ${expiredCount} expired entries`);
         memoryFreed += expiredCount * 1024; // Estimate
       }
-      
+
       // Compress large entries
       const compressionResult = await this.compressLargeEntries();
       if (compressionResult.count > 0) {
         optimizationsApplied.push(`Compressed ${compressionResult.count} large entries`);
         memoryFreed += compressionResult.spaceSaved;
       }
-      
+
       // Analyze access patterns for recommendations
       const analysis = await this.analyzeCacheUsage();
       recommendations.push(...analysis.recommendations.map(r => r.description));
-      
+
       const performanceImprovement = this.calculatePerformanceImprovement(memoryFreed);
-      
+
       const result: CacheOptimizationResult = {
         optimizationsApplied,
         memoryFreed,
         performanceImprovement,
-        recommendations
+        recommendations,
       };
-      
+
       this.logger.info('Cache optimization completed', result);
       return result;
     } catch (error) {
@@ -607,13 +613,13 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
   async compactCache(): Promise<void> {
     try {
       this.logger.info('Starting cache compaction');
-      
+
       // Remove expired entries
       await this.removeExpiredEntries();
-      
+
       // Defragment memory (implementation would depend on cache backend)
       await this.defragmentMemory();
-      
+
       this.logger.info('Cache compaction completed');
     } catch (error) {
       this.logger.error('Failed to compact cache', error as Error);
@@ -624,14 +630,14 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
   async analyzeCacheUsage(): Promise<CacheUsageAnalysis> {
     try {
       this.logger.info('Analyzing cache usage');
-      
+
       const keys = await this.getAllKeys();
       const hotKeys: string[] = [];
       const coldKeys: string[] = [];
       const memoryDistribution: MemoryDistribution[] = [];
       const accessPatterns: AccessPattern[] = [];
       const recommendations: OptimizationRecommendation[] = [];
-      
+
       // Analyze access patterns
       for (const key of keys) {
         const metrics = this.detailedMetrics.get(key);
@@ -643,7 +649,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
           }
         }
       }
-      
+
       // Generate memory distribution
       const keyPrefixes = this.groupKeysByPrefix(keys);
       for (const [prefix, prefixKeys] of keyPrefixes) {
@@ -651,48 +657,48 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
           const metrics = this.detailedMetrics.get(key);
           return sum + (metrics?.size || 0);
         }, 0);
-        
+
         memoryDistribution.push({
           keyPattern: prefix,
           memoryUsage: totalSize,
           percentage: (totalSize / this.metrics.memoryUsage) * 100,
-          entryCount: prefixKeys.length
+          entryCount: prefixKeys.length,
         });
       }
-      
+
       // Generate recommendations
       if (coldKeys.length > keys.length * 0.3) {
         recommendations.push({
           type: 'ttl_adjustment',
           description: 'Consider reducing TTL for cold keys to free memory',
           expectedImpact: 'Reduce memory usage by 20-30%',
-          implementation: 'Adjust TTL settings for low-access patterns'
+          implementation: 'Adjust TTL settings for low-access patterns',
         });
       }
-      
+
       if (hotKeys.length > 0) {
         recommendations.push({
           type: 'strategy_change',
           description: 'Consider using LFU eviction for hot keys',
           expectedImpact: 'Improve hit rate by 10-15%',
-          implementation: 'Change eviction policy to LFU for frequently accessed data'
+          implementation: 'Change eviction policy to LFU for frequently accessed data',
         });
       }
-      
+
       const analysis: CacheUsageAnalysis = {
         hotKeys: hotKeys.slice(0, 20), // Top 20
         coldKeys: coldKeys.slice(0, 20), // Top 20
         memoryDistribution,
         accessPatterns,
-        recommendations
+        recommendations,
       };
-      
+
       this.logger.info('Cache usage analysis completed', {
         hotKeysCount: hotKeys.length,
         coldKeysCount: coldKeys.length,
-        recommendationsCount: recommendations.length
+        recommendationsCount: recommendations.length,
       });
-      
+
       return analysis;
     } catch (error) {
       this.logger.error('Failed to analyze cache usage', error as Error);
@@ -707,21 +713,21 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
 
   async getDetailedMetrics(): Promise<DetailedCacheMetrics> {
     const baseMetrics = await this.getMetrics();
-    
+
     // Generate detailed breakdowns
     const keyDistribution = await this.generateKeyDistribution();
     const sizeDistribution = await this.generateSizeDistribution();
     const ttlDistribution = await this.generateTTLDistribution();
     const accessFrequency = await this.generateAccessFrequency();
     const performanceBreakdown = await this.generatePerformanceBreakdown();
-    
+
     return {
       ...baseMetrics,
       keyDistribution,
       sizeDistribution,
       ttlDistribution,
       accessFrequency,
-      performanceBreakdown
+      performanceBreakdown,
     };
   }
 
@@ -731,7 +737,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
     this.missCount = 0;
     this.totalResponseTime = 0;
     this.evictionCount = 0;
-    
+
     this.metrics = {
       hitRate: 0,
       missRate: 0,
@@ -742,11 +748,11 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
       cacheSize: 0,
       memoryUsage: 0,
       evictionCount: 0,
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
     };
-    
+
     this.detailedMetrics.clear();
-    
+
     this.logger.info('Cache metrics reset');
   }
 
@@ -754,7 +760,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
     try {
       // Create a new cache manager instance for the partition
       const partitionCache = new AdvancedCacheManager(this.baseCache, this.logger);
-      
+
       // Configure partition-specific settings
       partitionCache.registerStrategy('default', {
         name: 'default',
@@ -763,11 +769,11 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
         maxSize: config.maxSize,
         evictionPolicy: config.evictionPolicy,
         compressionEnabled: false,
-        persistToDisk: false
+        persistToDisk: false,
       });
-      
+
       this.partitions.set(name, partitionCache);
-      
+
       this.logger.info('Cache partition created', { name, config });
     } catch (error) {
       this.logger.error('Failed to create cache partition', error, { name, config });
@@ -782,10 +788,10 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
   async enableDistribution(config: DistributionConfig): Promise<void> {
     try {
       this.distributionConfig = config;
-      
+
       // Initialize distributed cache coordination
       await this.initializeDistribution();
-      
+
       this.logger.info('Cache distribution enabled', { config });
     } catch (error) {
       this.logger.error('Failed to enable cache distribution', error, { config });
@@ -801,10 +807,10 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
 
     try {
       this.logger.info('Syncing cache with peers');
-      
+
       // Implementation would sync with peer cache instances
       // This is a placeholder for the actual distributed cache logic
-      
+
       this.logger.info('Cache sync with peers completed');
     } catch (error) {
       this.logger.error('Failed to sync cache with peers', error as Error);
@@ -813,7 +819,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
   }
 
   // Private helper methods
-  
+
   private registerDefaultStrategies(): void {
     // Fast access strategy for frequently accessed data
     this.registerStrategy('fast', {
@@ -822,7 +828,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
       ttl: 60, // 1 minute
       evictionPolicy: 'LRU',
       compressionEnabled: false,
-      persistToDisk: false
+      persistToDisk: false,
     });
 
     // Standard strategy for general purpose caching
@@ -832,7 +838,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
       ttl: 300, // 5 minutes
       evictionPolicy: 'LRU',
       compressionEnabled: false,
-      persistToDisk: false
+      persistToDisk: false,
     });
 
     // Long-term strategy for stable data
@@ -842,7 +848,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
       ttl: 3600, // 1 hour
       evictionPolicy: 'LFU',
       compressionEnabled: true,
-      persistToDisk: true
+      persistToDisk: true,
     });
 
     // Large data strategy with compression
@@ -853,7 +859,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
       maxSize: 1024 * 1024, // 1MB
       evictionPolicy: 'LRU',
       compressionEnabled: true,
-      persistToDisk: true
+      persistToDisk: true,
     });
   }
 
@@ -873,7 +879,8 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
     this.metrics.totalMisses = this.missCount;
     this.metrics.hitRate = this.requestCount > 0 ? this.hitCount / this.requestCount : 0;
     this.metrics.missRate = this.requestCount > 0 ? this.missCount / this.requestCount : 0;
-    this.metrics.averageResponseTime = this.requestCount > 0 ? this.totalResponseTime / this.requestCount : 0;
+    this.metrics.averageResponseTime =
+      this.requestCount > 0 ? this.totalResponseTime / this.requestCount : 0;
   }
 
   private async compressValue(value: any): Promise<string> {
@@ -909,14 +916,14 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
     // Extract tags from key patterns (e.g., "user:123:profile" -> ["user", "profile"])
     const parts = key.split(':');
     const tags: string[] = [];
-    
+
     if (parts.length > 1) {
       tags.push(parts[0]); // First part as primary tag
       if (parts.length > 2) {
         tags.push(parts[parts.length - 1]); // Last part as secondary tag
       }
     }
-    
+
     return tags;
   }
 
@@ -935,7 +942,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
   private async executeWarmupStrategy(strategy: WarmupStrategy): Promise<void> {
     try {
       this.logger.info('Executing warmup strategy', { strategyName: strategy.name });
-      
+
       // Check conditions if any
       if (strategy.conditions && !this.evaluateConditions(strategy.conditions)) {
         this.logger.debug('Warmup strategy conditions not met', { strategyName: strategy.name });
@@ -944,18 +951,20 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
 
       // Execute data source function
       const data = await strategy.dataSource();
-      
+
       // Cache the data for each key
       for (const key of strategy.keys) {
         await this.setWithStrategy(key, data, 'standard');
       }
-      
-      this.logger.info('Warmup strategy executed successfully', { 
+
+      this.logger.info('Warmup strategy executed successfully', {
         strategyName: strategy.name,
-        keysWarmed: strategy.keys.length
+        keysWarmed: strategy.keys.length,
       });
     } catch (error) {
-      this.logger.error('Failed to execute warmup strategy', error, { strategyName: strategy.name });
+      this.logger.error('Failed to execute warmup strategy', error, {
+        strategyName: strategy.name,
+      });
     }
   }
 
@@ -975,7 +984,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
   private async removeExpiredEntries(): Promise<number> {
     const keys = await this.getAllKeys();
     let removedCount = 0;
-    
+
     for (const key of keys) {
       const entry = await this.baseCache.get<CacheEntry>(key);
       if (entry) {
@@ -987,7 +996,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
         }
       }
     }
-    
+
     return removedCount;
   }
 
@@ -995,27 +1004,29 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
     const keys = await this.getAllKeys();
     let compressedCount = 0;
     let spaceSaved = 0;
-    
+
     for (const key of keys) {
       const entry = await this.baseCache.get<CacheEntry>(key);
-      if (entry && !entry.compressed && entry.size > 1024) { // Compress entries > 1KB
+      if (entry && !entry.compressed && entry.size > 1024) {
+        // Compress entries > 1KB
         const originalSize = entry.size;
         const compressedValue = await this.compressValue(entry.value);
         const compressedSize = this.calculateSize(compressedValue);
-        
-        if (compressedSize < originalSize * 0.8) { // Only if compression saves at least 20%
+
+        if (compressedSize < originalSize * 0.8) {
+          // Only if compression saves at least 20%
           entry.value = compressedValue;
           entry.compressed = true;
           entry.size = compressedSize;
-          
+
           await this.baseCache.set(key, entry, entry.ttl);
-          
+
           compressedCount++;
           spaceSaved += originalSize - compressedSize;
         }
       }
     }
-    
+
     return { count: compressedCount, spaceSaved };
   }
 
@@ -1033,7 +1044,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
 
   private groupKeysByPrefix(keys: string[]): Map<string, string[]> {
     const groups = new Map<string, string[]>();
-    
+
     for (const key of keys) {
       const prefix = key.split(':')[0] || 'default';
       if (!groups.has(prefix)) {
@@ -1041,7 +1052,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
       }
       groups.get(prefix)!.push(key);
     }
-    
+
     return groups;
   }
 
@@ -1049,11 +1060,11 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
     const keys = await this.getAllKeys();
     const groups = this.groupKeysByPrefix(keys);
     const distribution: KeyDistribution[] = [];
-    
+
     for (const [prefix, prefixKeys] of groups) {
       let totalSize = 0;
       let count = 0;
-      
+
       for (const key of prefixKeys) {
         const metrics = this.detailedMetrics.get(key);
         if (metrics) {
@@ -1061,15 +1072,15 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
           count++;
         }
       }
-      
+
       distribution.push({
         prefix,
         count,
         totalSize,
-        averageSize: count > 0 ? totalSize / count : 0
+        averageSize: count > 0 ? totalSize / count : 0,
       });
     }
-    
+
     return distribution.sort((a, b) => b.totalSize - a.totalSize);
   }
 
@@ -1080,29 +1091,29 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
       { range: '1KB-10KB', min: 1024, max: 10240 },
       { range: '10KB-100KB', min: 10240, max: 102400 },
       { range: '100KB-1MB', min: 102400, max: 1048576 },
-      { range: '>1MB', min: 1048576, max: Infinity }
+      { range: '>1MB', min: 1048576, max: Infinity },
     ];
-    
+
     const distribution: SizeDistribution[] = [];
     const totalKeys = keys.length;
-    
+
     for (const range of ranges) {
       let count = 0;
-      
+
       for (const key of keys) {
         const metrics = this.detailedMetrics.get(key);
         if (metrics && metrics.size >= range.min && metrics.size < range.max) {
           count++;
         }
       }
-      
+
       distribution.push({
         range: range.range,
         count,
-        percentage: totalKeys > 0 ? (count / totalKeys) * 100 : 0
+        percentage: totalKeys > 0 ? (count / totalKeys) * 100 : 0,
       });
     }
-    
+
     return distribution;
   }
 
@@ -1113,53 +1124,52 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
       { range: '1-5min', min: 60, max: 300 },
       { range: '5-30min', min: 300, max: 1800 },
       { range: '30min-1h', min: 1800, max: 3600 },
-      { range: '>1h', min: 3600, max: Infinity }
+      { range: '>1h', min: 3600, max: Infinity },
     ];
-    
+
     const distribution: TTLDistribution[] = [];
     const totalKeys = keys.length;
-    
+
     for (const range of ranges) {
       let count = 0;
-      
+
       for (const key of keys) {
         const metrics = this.detailedMetrics.get(key);
         if (metrics && metrics.ttlRemaining >= range.min && metrics.ttlRemaining < range.max) {
           count++;
         }
       }
-      
+
       distribution.push({
         range: range.range,
         count,
-        percentage: totalKeys > 0 ? (count / totalKeys) * 100 : 0
+        percentage: totalKeys > 0 ? (count / totalKeys) * 100 : 0,
       });
     }
-    
+
     return distribution;
   }
 
   private async generateAccessFrequency(): Promise<AccessFrequency[]> {
     const keys = await this.getAllKeys();
     const frequency: AccessFrequency[] = [];
-    
+
     for (const key of keys) {
       const metrics = this.detailedMetrics.get(key);
       if (metrics) {
         const timeSinceCreation = Date.now() - metrics.createdAt;
-        const averageTimeBetweenAccesses = metrics.hitCount > 1 
-          ? timeSinceCreation / metrics.hitCount 
-          : timeSinceCreation;
-        
+        const averageTimeBetweenAccesses =
+          metrics.hitCount > 1 ? timeSinceCreation / metrics.hitCount : timeSinceCreation;
+
         frequency.push({
           key,
           accessCount: metrics.hitCount,
           lastAccessed: metrics.lastHit,
-          averageTimeBetweenAccesses
+          averageTimeBetweenAccesses,
         });
       }
     }
-    
+
     return frequency.sort((a, b) => b.accessCount - a.accessCount).slice(0, 50); // Top 50
   }
 
@@ -1172,7 +1182,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
       compressionTime: this.metrics.averageResponseTime * 0.1,
       decompressionTime: this.metrics.averageResponseTime * 0.1,
       networkTime: this.metrics.averageResponseTime * 0.3,
-      diskIOTime: this.metrics.averageResponseTime * 0.15
+      diskIOTime: this.metrics.averageResponseTime * 0.15,
     };
   }
 
@@ -1185,7 +1195,7 @@ export class AdvancedCacheManager implements AdvancedCacheManagerInterface {
     // This would set up peer communication, consistent hashing, etc.
     this.logger.info('Initializing distributed cache', {
       peers: this.distributionConfig.peers.length,
-      replicationFactor: this.distributionConfig.replicationFactor
+      replicationFactor: this.distributionConfig.replicationFactor,
     });
   }
 }

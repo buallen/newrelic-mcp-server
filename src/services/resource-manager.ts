@@ -85,25 +85,29 @@ export interface ResourceOptimization {
 
 export interface ResourceManagerInterface {
   // Connection pooling
-  createConnectionPool<T>(name: string, config: ConnectionPoolConfig, factory: ResourceFactory<T>): Promise<ResourcePool<T>>;
+  createConnectionPool<T>(
+    name: string,
+    config: ConnectionPoolConfig,
+    factory: ResourceFactory<T>
+  ): Promise<ResourcePool<T>>;
   getConnectionPool<T>(name: string): ResourcePool<T> | null;
   acquireConnection<T>(poolName: string): Promise<T>;
   releaseConnection<T>(poolName: string, connection: T): Promise<void>;
-  
+
   // Memory management
   getMemoryUsage(): Promise<MemoryManagement>;
   forceGarbageCollection(): Promise<GCStats>;
   detectMemoryLeaks(): Promise<MemoryLeak[]>;
   optimizeMemoryUsage(): Promise<MemoryRecommendation[]>;
-  
+
   // Resource monitoring
   getResourceMetrics(): Promise<ResourceMetrics[]>;
   getResourceUtilization(resourceType: string): Promise<number>;
-  
+
   // Optimization
   analyzeResourceUsage(): Promise<ResourceOptimization[]>;
   applyOptimizations(optimizations: ResourceOptimization[]): Promise<void>;
-  
+
   // Lifecycle management
   startResourceMonitoring(): void;
   stopResourceMonitoring(): void;
@@ -156,7 +160,7 @@ export class GenericResourcePool<T> implements ResourcePool<T> {
 
     // Initialize minimum connections
     this.initializePool();
-    
+
     // Start maintenance tasks
     this.startMaintenance();
   }
@@ -181,16 +185,16 @@ export class GenericResourcePool<T> implements ResourcePool<T> {
         createdAt: Date.now(),
         lastUsed: Date.now(),
         useCount: 0,
-        isValid: true
+        isValid: true,
       };
 
       this.resources.push(pooledResource);
       this.currentSize++;
       this.created++;
 
-      this.logger.debug('Resource created', { 
-        pool: this.name, 
-        currentSize: this.currentSize 
+      this.logger.debug('Resource created', {
+        pool: this.name,
+        currentSize: this.currentSize,
       });
 
       return resource;
@@ -220,9 +224,9 @@ export class GenericResourcePool<T> implements ResourcePool<T> {
 
       await this.factory.destroy(resource);
 
-      this.logger.debug('Resource destroyed', { 
-        pool: this.name, 
-        currentSize: this.currentSize 
+      this.logger.debug('Resource destroyed', {
+        pool: this.name,
+        currentSize: this.currentSize,
       });
     } catch (error) {
       this.logger.error('Failed to destroy resource', error, { pool: this.name });
@@ -248,7 +252,7 @@ export class GenericResourcePool<T> implements ResourcePool<T> {
           clearTimeout(timeout);
           reject(error);
         },
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       this.processQueue();
@@ -293,16 +297,16 @@ export class GenericResourcePool<T> implements ResourcePool<T> {
 
   private async initializePool(): Promise<void> {
     const promises: Promise<T>[] = [];
-    
+
     for (let i = 0; i < this.config.minConnections; i++) {
       promises.push(this.createResource());
     }
 
     try {
       await Promise.all(promises);
-      this.logger.info('Resource pool initialized', { 
-        pool: this.name, 
-        initialSize: this.config.minConnections 
+      this.logger.info('Resource pool initialized', {
+        pool: this.name,
+        initialSize: this.config.minConnections,
       });
     } catch (error) {
       this.logger.error('Failed to initialize resource pool', error, { pool: this.name });
@@ -359,8 +363,7 @@ export class GenericResourcePool<T> implements ResourcePool<T> {
     // Find resources to destroy
     for (const pooledResource of this.resources) {
       // Check idle timeout
-      if (pooledResource.isValid && 
-          now - pooledResource.lastUsed > this.config.idleTimeoutMs) {
+      if (pooledResource.isValid && now - pooledResource.lastUsed > this.config.idleTimeoutMs) {
         resourcesToDestroy.push(pooledResource);
         continue;
       }
@@ -407,19 +410,19 @@ export class ResourceManager implements ResourceManagerInterface {
     gcCount: 0,
     averageGCTime: 0,
     lastGCTime: 0,
-    gcType: 'unknown'
+    gcType: 'unknown',
   };
 
   constructor(logger: Logger, performanceMonitor: PerformanceMonitor) {
     this.logger = logger;
     this.performanceMonitor = performanceMonitor;
-    
+
     this.setupGCMonitoring();
   }
 
   async createConnectionPool<T>(
-    name: string, 
-    config: ConnectionPoolConfig, 
+    name: string,
+    config: ConnectionPoolConfig,
     factory: ResourceFactory<T>
   ): Promise<ResourcePool<T>> {
     if (this.pools.has(name)) {
@@ -467,17 +470,17 @@ export class ResourceManager implements ResourceManagerInterface {
       arrayBuffers: memUsage.arrayBuffers,
       gcStats: this.gcStats,
       memoryLeaks,
-      recommendations
+      recommendations,
     };
   }
 
   async forceGarbageCollection(): Promise<GCStats> {
     const startTime = Date.now();
-    
+
     if (global.gc) {
       global.gc();
       const gcTime = Date.now() - startTime;
-      
+
       this.gcStats.totalGCTime += gcTime;
       this.gcStats.gcCount++;
       this.gcStats.averageGCTime = this.gcStats.totalGCTime / this.gcStats.gcCount;
@@ -494,11 +497,11 @@ export class ResourceManager implements ResourceManagerInterface {
 
   async detectMemoryLeaks(): Promise<MemoryLeak[]> {
     const leaks: MemoryLeak[] = [];
-    
+
     // This is a simplified implementation
     // In production, you'd use more sophisticated leak detection
     const memUsage = process.memoryUsage();
-    
+
     // Check for heap growth
     const heapGrowth = memUsage.heapUsed / memUsage.heapTotal;
     if (heapGrowth > 0.9) {
@@ -507,18 +510,19 @@ export class ResourceManager implements ResourceManagerInterface {
         size: memUsage.heapUsed,
         growth: heapGrowth * 100,
         location: 'heap',
-        severity: 'critical'
+        severity: 'critical',
       });
     }
 
     // Check for external memory growth
-    if (memUsage.external > 100 * 1024 * 1024) { // 100MB
+    if (memUsage.external > 100 * 1024 * 1024) {
+      // 100MB
       leaks.push({
         type: 'external_memory',
         size: memUsage.external,
         growth: 0, // Would need historical data
         location: 'external',
-        severity: 'medium'
+        severity: 'medium',
       });
     }
 
@@ -538,13 +542,14 @@ export class ResourceManager implements ResourceManagerInterface {
         implementation: [
           'Increase heap size with --max-old-space-size',
           'Tune GC parameters',
-          'Consider manual GC triggers at appropriate times'
-        ]
+          'Consider manual GC triggers at appropriate times',
+        ],
       });
     }
 
     // Large external memory
-    if (memUsage.external > 50 * 1024 * 1024) { // 50MB
+    if (memUsage.external > 50 * 1024 * 1024) {
+      // 50MB
       recommendations.push({
         type: 'memory_limit',
         description: 'High external memory usage detected',
@@ -552,8 +557,8 @@ export class ResourceManager implements ResourceManagerInterface {
         implementation: [
           'Review buffer usage',
           'Implement streaming for large data',
-          'Add memory limits to operations'
-        ]
+          'Add memory limits to operations',
+        ],
       });
     }
 
@@ -575,7 +580,7 @@ export class ResourceManager implements ResourceManagerInterface {
         averageActiveTime: 0, // Would need to track
         creationRate: 0, // Would need time-based calculation
         destructionRate: 0, // Would need time-based calculation
-        utilizationPercentage: (pool.inUse / pool.maxSize) * 100
+        utilizationPercentage: (pool.inUse / pool.maxSize) * 100,
       });
     }
 
@@ -587,18 +592,18 @@ export class ResourceManager implements ResourceManagerInterface {
       case 'memory':
         const memUsage = process.memoryUsage();
         return (memUsage.heapUsed / memUsage.heapTotal) * 100;
-        
+
       case 'connections':
         let totalUsed = 0;
         let totalMax = 0;
-        
+
         for (const pool of this.pools.values()) {
           totalUsed += pool.inUse;
           totalMax += pool.maxSize;
         }
-        
+
         return totalMax > 0 ? (totalUsed / totalMax) * 100 : 0;
-        
+
       default:
         return 0;
     }
@@ -606,11 +611,11 @@ export class ResourceManager implements ResourceManagerInterface {
 
   async analyzeResourceUsage(): Promise<ResourceOptimization[]> {
     const optimizations: ResourceOptimization[] = [];
-    
+
     // Analyze connection pools
     for (const [name, pool] of this.pools) {
       const utilization = (pool.inUse / pool.maxSize) * 100;
-      
+
       if (utilization < 20) {
         optimizations.push({
           type: 'connection_pooling',
@@ -621,8 +626,8 @@ export class ResourceManager implements ResourceManagerInterface {
           implementationSteps: [
             'Reduce maximum pool size',
             'Monitor performance impact',
-            'Adjust based on usage patterns'
-          ]
+            'Adjust based on usage patterns',
+          ],
         });
       } else if (utilization > 90) {
         optimizations.push({
@@ -634,8 +639,8 @@ export class ResourceManager implements ResourceManagerInterface {
           implementationSteps: [
             'Increase maximum pool size',
             'Monitor resource usage',
-            'Consider connection optimization'
-          ]
+            'Consider connection optimization',
+          ],
         });
       }
     }
@@ -643,7 +648,7 @@ export class ResourceManager implements ResourceManagerInterface {
     // Analyze memory usage
     const memUsage = process.memoryUsage();
     const memUtilization = (memUsage.heapUsed / memUsage.heapTotal) * 100;
-    
+
     if (memUtilization > 80) {
       optimizations.push({
         type: 'memory_management',
@@ -655,8 +660,8 @@ export class ResourceManager implements ResourceManagerInterface {
           'Implement object pooling',
           'Optimize cache sizes',
           'Review memory-intensive operations',
-          'Consider streaming for large data'
-        ]
+          'Consider streaming for large data',
+        ],
       });
     }
 
@@ -667,13 +672,13 @@ export class ResourceManager implements ResourceManagerInterface {
     for (const optimization of optimizations) {
       try {
         await this.applyOptimization(optimization);
-        this.logger.info('Optimization applied', { 
+        this.logger.info('Optimization applied', {
           type: optimization.type,
-          description: optimization.description 
+          description: optimization.description,
         });
       } catch (error) {
-        this.logger.error('Failed to apply optimization', error, { 
-          type: optimization.type 
+        this.logger.error('Failed to apply optimization', error, {
+          type: optimization.type,
         });
       }
     }
@@ -724,14 +729,14 @@ export class ResourceManager implements ResourceManagerInterface {
   }
 
   // Private helper methods
-  
+
   private setupGCMonitoring(): void {
     // Monitor GC events if available
     if (process.env.NODE_ENV !== 'production') {
       // In development, we can use performance hooks
       try {
         const { PerformanceObserver } = require('perf_hooks');
-        const obs = new PerformanceObserver((list) => {
+        const obs = new PerformanceObserver(list => {
           const entries = list.getEntries();
           for (const entry of entries) {
             if (entry.entryType === 'gc') {
@@ -751,7 +756,7 @@ export class ResourceManager implements ResourceManagerInterface {
   }
 
   private async generateMemoryRecommendations(
-    memUsage: NodeJS.MemoryUsage, 
+    memUsage: NodeJS.MemoryUsage,
     leaks: MemoryLeak[]
   ): Promise<MemoryRecommendation[]> {
     const recommendations: MemoryRecommendation[] = [];
@@ -765,8 +770,8 @@ export class ResourceManager implements ResourceManagerInterface {
         implementation: [
           'Increase --max-old-space-size',
           'Implement memory monitoring',
-          'Optimize data structures'
-        ]
+          'Optimize data structures',
+        ],
       });
     }
 
@@ -779,8 +784,8 @@ export class ResourceManager implements ResourceManagerInterface {
         implementation: [
           'Use memory profiling tools',
           'Review event listener cleanup',
-          'Check for circular references'
-        ]
+          'Check for circular references',
+        ],
       });
     }
 
@@ -793,8 +798,8 @@ export class ResourceManager implements ResourceManagerInterface {
         implementation: [
           'Tune GC parameters',
           'Reduce object allocation rate',
-          'Implement object pooling'
-        ]
+          'Implement object pooling',
+        ],
       });
     }
 
@@ -806,11 +811,11 @@ export class ResourceManager implements ResourceManagerInterface {
       case 'connection_pooling':
         await this.optimizeConnectionPools(optimization);
         break;
-        
+
       case 'memory_management':
         await this.optimizeMemoryManagement(optimization);
         break;
-        
+
       default:
         this.logger.warn('Unknown optimization type', { type: optimization.type });
     }
@@ -835,15 +840,15 @@ export class ResourceManager implements ResourceManagerInterface {
     try {
       const metrics = await this.getResourceMetrics();
       const memoryUsage = await this.getMemoryUsage();
-      
+
       // Record metrics with performance monitor
       for (const metric of metrics) {
         this.performanceMonitor.recordThroughput(metric.currentActive);
       }
-      
-      this.logger.debug('Resource metrics collected', { 
+
+      this.logger.debug('Resource metrics collected', {
         poolCount: metrics.length,
-        memoryUsage: memoryUsage.heapUsed 
+        memoryUsage: memoryUsage.heapUsed,
       });
     } catch (error) {
       this.logger.error('Failed to collect resource metrics', error as Error);

@@ -83,34 +83,34 @@ export interface PerformanceSettings {
 export interface EnvironmentVariables {
   // Required
   NEWRELIC_API_KEY: string;
-  
+
   // Optional with defaults
   NEWRELIC_ACCOUNT_ID?: string;
   NEWRELIC_BASE_URL?: string;
   NEWRELIC_GRAPHQL_URL?: string;
-  
+
   MCP_SERVER_PORT?: string;
   MCP_SERVER_HOST?: string;
   MCP_SERVER_TIMEOUT?: string;
-  
+
   CACHE_TYPE?: string;
   CACHE_TTL?: string;
   CACHE_MAX_SIZE?: string;
-  
+
   REDIS_HOST?: string;
   REDIS_PORT?: string;
   REDIS_PASSWORD?: string;
-  
+
   LOG_LEVEL?: string;
   LOG_FORMAT?: string;
   LOG_DESTINATION?: string;
-  
+
   ENABLE_METRICS?: string;
   RATE_LIMIT_PER_MINUTE?: string;
   MAX_CONCURRENT_REQUESTS?: string;
-  
+
   ENABLE_CORS?: string;
   REQUEST_SIZE_LIMIT?: string;
-  
+
   NODE_ENV?: string;
 }

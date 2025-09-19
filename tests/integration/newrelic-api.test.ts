@@ -21,7 +21,8 @@ const mockLogger: Logger = {
 };
 
 // Skip integration tests if no API key is provided
-const skipIntegrationTests = !process.env.NEWRELIC_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
+const skipIntegrationTests =
+  !process.env.NEWRELIC_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
 
 describe.skipIf(skipIntegrationTests)('NewRelic API Integration', () => {
   let client: NewRelicClientImpl;
@@ -41,13 +42,16 @@ describe.skipIf(skipIntegrationTests)('NewRelic API Integration', () => {
     };
 
     client = new NewRelicClientImpl(config, mockLogger);
-    graphqlClient = new GraphQLClient({
-      endpoint: config.graphqlUrl,
-      apiKey: config.apiKey,
-      timeout: config.timeout,
-      retryAttempts: config.retryAttempts,
-      retryDelay: config.retryDelay,
-    }, mockLogger);
+    graphqlClient = new GraphQLClient(
+      {
+        endpoint: config.graphqlUrl,
+        apiKey: config.apiKey,
+        timeout: config.timeout,
+        retryAttempts: config.retryAttempts,
+        retryDelay: config.retryDelay,
+      },
+      mockLogger
+    );
   });
 
   describe('Authentication', () => {
@@ -72,7 +76,7 @@ describe.skipIf(skipIntegrationTests)('NewRelic API Integration', () => {
     it('should fetch applications list', async () => {
       const applications = await client.getApplications();
       expect(applications).toBeInstanceOf(Array);
-      
+
       if (applications.length > 0) {
         const app = applications[0];
         expect(app).toHaveProperty('id');
@@ -84,11 +88,11 @@ describe.skipIf(skipIntegrationTests)('NewRelic API Integration', () => {
 
     it('should fetch single application if applications exist', async () => {
       const applications = await client.getApplications();
-      
+
       if (applications.length > 0) {
         const appId = applications[0].id;
         const application = await client.getApplication(appId);
-        
+
         expect(application).toHaveProperty('id', appId);
         expect(application).toHaveProperty('name');
         expect(application).toHaveProperty('application_summary');
@@ -125,7 +129,7 @@ describe.skipIf(skipIntegrationTests)('NewRelic API Integration', () => {
       const createdPolicy = await client.createAlertPolicy(policyInput);
       expect(createdPolicy).toHaveProperty('id');
       expect(createdPolicy.name).toBe(policyInput.name);
-      
+
       testPolicyId = createdPolicy.id;
 
       // Update policy
@@ -136,7 +140,7 @@ describe.skipIf(skipIntegrationTests)('NewRelic API Integration', () => {
       // Delete policy
       const deleteResult = await client.deleteAlertPolicy(testPolicyId);
       expect(deleteResult).toBe(true);
-      
+
       testPolicyId = null; // Mark as cleaned up
     }, 30000);
   });
@@ -145,7 +149,7 @@ describe.skipIf(skipIntegrationTests)('NewRelic API Integration', () => {
     it('should fetch incidents list', async () => {
       const incidents = await client.getIncidents();
       expect(incidents).toBeInstanceOf(Array);
-      
+
       if (incidents.length > 0) {
         const incident = incidents[0];
         expect(incident).toHaveProperty('id');
@@ -156,11 +160,11 @@ describe.skipIf(skipIntegrationTests)('NewRelic API Integration', () => {
 
     it('should fetch single incident if incidents exist', async () => {
       const incidents = await client.getIncidents();
-      
+
       if (incidents.length > 0) {
         const incidentId = incidents[0].id;
         const incident = await client.getIncident(incidentId);
-        
+
         expect(incident).toHaveProperty('id', incidentId);
         expect(incident).toHaveProperty('description');
       }
@@ -180,7 +184,7 @@ describe.skipIf(skipIntegrationTests)('NewRelic API Integration', () => {
       };
 
       const result = await client.executeNRQL(query);
-      
+
       expect(result).toHaveProperty('results');
       expect(result).toHaveProperty('metadata');
       expect(result).toHaveProperty('performanceStats');
@@ -190,7 +194,7 @@ describe.skipIf(skipIntegrationTests)('NewRelic API Integration', () => {
     it('should validate NRQL query', async () => {
       const validQuery = 'SELECT count(*) FROM Transaction';
       const result = await client.validateQuery(validQuery);
-      
+
       expect(result).toHaveProperty('valid');
       expect(result).toHaveProperty('errors');
       expect(result.errors).toBeInstanceOf(Array);
@@ -199,7 +203,7 @@ describe.skipIf(skipIntegrationTests)('NewRelic API Integration', () => {
     it('should detect invalid NRQL query', async () => {
       const invalidQuery = 'SELECT count(*) FORM Transaction'; // Typo: FORM instead of FROM
       const result = await client.validateQuery(invalidQuery);
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
     }, 15000);
@@ -213,7 +217,7 @@ describe.skipIf(skipIntegrationTests)('NewRelic API Integration', () => {
 
     it('should get user info via GraphQL', async () => {
       const userInfo = await graphqlClient.getUserInfo();
-      
+
       expect(userInfo).toHaveProperty('id');
       expect(userInfo).toHaveProperty('name');
     }, 15000);
@@ -225,7 +229,7 @@ describe.skipIf(skipIntegrationTests)('NewRelic API Integration', () => {
       }
 
       const accountInfo = await graphqlClient.getAccountInfo(parseInt(config.defaultAccountId, 10));
-      
+
       expect(accountInfo).toHaveProperty('id');
       expect(accountInfo).toHaveProperty('name');
     }, 15000);
@@ -237,16 +241,16 @@ describe.skipIf(skipIntegrationTests)('NewRelic API Integration', () => {
       }
 
       const eventTypes = await graphqlClient.getEventTypes(parseInt(config.defaultAccountId, 10));
-      
+
       expect(eventTypes).toBeInstanceOf(Array);
       expect(eventTypes.length).toBeGreaterThan(0);
     }, 15000);
 
     it('should search entities', async () => {
       const entities = await graphqlClient.searchEntities('domain = "APM"', ['APPLICATION']);
-      
+
       expect(entities).toBeInstanceOf(Array);
-      
+
       if (entities.length > 0) {
         const entity = entities[0];
         expect(entity).toHaveProperty('guid');
@@ -264,7 +268,7 @@ describe.skipIf(skipIntegrationTests)('NewRelic API Integration', () => {
 
     it('should get API status', async () => {
       const status = await client.getApiStatus();
-      
+
       expect(status).toHaveProperty('connected');
       expect(status).toHaveProperty('responseTime');
       expect(status.connected).toBe(true);
@@ -274,20 +278,26 @@ describe.skipIf(skipIntegrationTests)('NewRelic API Integration', () => {
 
   describe('Error Handling', () => {
     it('should handle invalid API key', async () => {
-      const invalidClient = new NewRelicClientImpl({
-        ...config,
-        apiKey: 'invalid-key',
-      }, mockLogger);
+      const invalidClient = new NewRelicClientImpl(
+        {
+          ...config,
+          apiKey: 'invalid-key',
+        },
+        mockLogger
+      );
 
       const result = await invalidClient.authenticate('invalid-key');
       expect(result).toBe(false);
     }, 10000);
 
     it('should handle network timeouts', async () => {
-      const timeoutClient = new NewRelicClientImpl({
-        ...config,
-        timeout: 1, // 1ms timeout to force timeout
-      }, mockLogger);
+      const timeoutClient = new NewRelicClientImpl(
+        {
+          ...config,
+          timeout: 1, // 1ms timeout to force timeout
+        },
+        mockLogger
+      );
 
       await expect(timeoutClient.getApplications()).rejects.toThrow();
     }, 10000);
@@ -310,7 +320,7 @@ export function runIntegrationTests() {
     console.log('Example: NEWRELIC_API_KEY=your_key npm run test:integration');
     return;
   }
-  
+
   console.log('Running NewRelic API integration tests...');
   console.log('API Key:', process.env.NEWRELIC_API_KEY ? 'Set' : 'Not set');
   console.log('Account ID:', process.env.NEWRELIC_ACCOUNT_ID || 'Not set');

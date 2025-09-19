@@ -1,10 +1,7 @@
 import { NewRelicClientImpl } from '../client/newrelic-client';
 import { Logger } from './logger';
 import { CacheManager } from './cache-manager';
-import {
-  TimeRange,
-  NRQLResult
-} from '../types/newrelic';
+import { TimeRange, NRQLResult } from '../types/newrelic';
 
 export interface TransactionTrace {
   id: string;
@@ -70,27 +67,78 @@ export interface ExternalTrace {
 export interface TransactionTracerInterface {
   // Transaction trace retrieval
   getTransactionTrace(traceId: string): Promise<TransactionTrace | null>;
-  getTransactionTraces(applicationId: string, limit?: number, timeRange?: TimeRange): Promise<TransactionTrace[]>;
-  getSlowTransactionTraces(applicationId: string, limit?: number, timeRange?: TimeRange): Promise<TransactionTrace[]>;
-  
+  getTransactionTraces(
+    applicationId: string,
+    limit?: number,
+    timeRange?: TimeRange
+  ): Promise<TransactionTrace[]>;
+  getSlowTransactionTraces(
+    applicationId: string,
+    limit?: number,
+    timeRange?: TimeRange
+  ): Promise<TransactionTrace[]>;
+
   // Transaction analysis
-  getTransactionSummary(applicationId: string, transactionName: string, timeRange?: TimeRange): Promise<TransactionSummary>;
-  getTransactionBreakdown(applicationId: string, transactionName: string, timeRange?: TimeRange): Promise<TraceSegment[]>;
-  
+  getTransactionSummary(
+    applicationId: string,
+    transactionName: string,
+    timeRange?: TimeRange
+  ): Promise<TransactionSummary>;
+  getTransactionBreakdown(
+    applicationId: string,
+    transactionName: string,
+    timeRange?: TimeRange
+  ): Promise<TraceSegment[]>;
+
   // Database performance analysis
-  getDatabaseTraces(applicationId: string, limit?: number, timeRange?: TimeRange): Promise<DatabaseTrace[]>;
-  getSlowDatabaseQueries(applicationId: string, limit?: number, timeRange?: TimeRange): Promise<DatabaseTrace[]>;
-  getDatabaseOperationBreakdown(applicationId: string, timeRange?: TimeRange): Promise<DatabaseOperationSummary[]>;
-  
+  getDatabaseTraces(
+    applicationId: string,
+    limit?: number,
+    timeRange?: TimeRange
+  ): Promise<DatabaseTrace[]>;
+  getSlowDatabaseQueries(
+    applicationId: string,
+    limit?: number,
+    timeRange?: TimeRange
+  ): Promise<DatabaseTrace[]>;
+  getDatabaseOperationBreakdown(
+    applicationId: string,
+    timeRange?: TimeRange
+  ): Promise<DatabaseOperationSummary[]>;
+
   // External service analysis
-  getExternalTraces(applicationId: string, limit?: number, timeRange?: TimeRange): Promise<ExternalTrace[]>;
-  getSlowExternalCalls(applicationId: string, limit?: number, timeRange?: TimeRange): Promise<ExternalTrace[]>;
-  getExternalServiceBreakdown(applicationId: string, timeRange?: TimeRange): Promise<ExternalServiceSummary[]>;
-  
+  getExternalTraces(
+    applicationId: string,
+    limit?: number,
+    timeRange?: TimeRange
+  ): Promise<ExternalTrace[]>;
+  getSlowExternalCalls(
+    applicationId: string,
+    limit?: number,
+    timeRange?: TimeRange
+  ): Promise<ExternalTrace[]>;
+  getExternalServiceBreakdown(
+    applicationId: string,
+    timeRange?: TimeRange
+  ): Promise<ExternalServiceSummary[]>;
+
   // Performance analysis
-  analyzeTransactionPerformance(applicationId: string, transactionName: string, timeRange?: TimeRange): Promise<PerformanceAnalysis>;
-  identifyBottlenecks(applicationId: string, transactionName: string, timeRange?: TimeRange): Promise<Bottleneck[]>;
-  compareTransactionPerformance(applicationId: string, transactionName: string, baselineRange: TimeRange, comparisonRange: TimeRange): Promise<PerformanceComparison>;
+  analyzeTransactionPerformance(
+    applicationId: string,
+    transactionName: string,
+    timeRange?: TimeRange
+  ): Promise<PerformanceAnalysis>;
+  identifyBottlenecks(
+    applicationId: string,
+    transactionName: string,
+    timeRange?: TimeRange
+  ): Promise<Bottleneck[]>;
+  compareTransactionPerformance(
+    applicationId: string,
+    transactionName: string,
+    baselineRange: TimeRange,
+    comparisonRange: TimeRange
+  ): Promise<PerformanceComparison>;
 }
 
 export interface DatabaseOperationSummary {
@@ -197,27 +245,27 @@ export class TransactionTracer implements TransactionTracerInterface {
   async getTransactionTrace(traceId: string): Promise<TransactionTrace | null> {
     try {
       const cacheKey = `transaction_trace_${traceId}`;
-      
+
       // Try cache first
       const cached = await this.cache.get<TransactionTrace>(cacheKey);
       if (cached) {
         return cached;
       }
-      
+
       this.logger.debug('Fetching transaction trace', { traceId });
-      
+
       // Use REST API to get trace details
       const response = await this.client.get(`/application_instances/${traceId}/traces.json`);
-      
+
       if (!response.traces || response.traces.length === 0) {
         return null;
       }
-      
+
       const trace = this.mapTraceResponse(response.traces[0]);
-      
+
       // Cache the result
       await this.cache.set(cacheKey, trace, this.TRACE_CACHE_TTL);
-      
+
       return trace;
     } catch (error) {
       if (error.status === 404) {
@@ -228,21 +276,25 @@ export class TransactionTracer implements TransactionTracerInterface {
     }
   }
 
-  async getTransactionTraces(applicationId: string, limit: number = 20, timeRange?: TimeRange): Promise<TransactionTrace[]> {
+  async getTransactionTraces(
+    applicationId: string,
+    limit: number = 20,
+    timeRange?: TimeRange
+  ): Promise<TransactionTrace[]> {
     try {
       const cacheKey = `transaction_traces_${applicationId}_${limit}_${this.getTimeRangeKey(timeRange)}`;
-      
+
       // Try cache first
       const cached = await this.cache.get<TransactionTrace[]>(cacheKey);
       if (cached) {
         return cached;
       }
-      
+
       this.logger.info('Fetching transaction traces', { applicationId, limit, timeRange });
-      
+
       const since = timeRange?.since || 'SINCE 1 hour ago';
       const until = timeRange?.until ? `UNTIL '${timeRange.until}'` : '';
-      
+
       // Get trace data using NRQL
       const query = `
         SELECT name, duration, timestamp, guid, request.uri, httpResponseCode
@@ -252,26 +304,34 @@ export class TransactionTracer implements TransactionTracerInterface {
         ORDER BY timestamp DESC 
         LIMIT ${limit}
       `;
-      
+
       const result = await this.client.executeNRQL(query);
       const traces = result.results.map(row => this.mapNRQLToTrace(row));
-      
+
       // Cache the results
       await this.cache.set(cacheKey, traces, this.CACHE_TTL);
-      
+
       this.logger.info('Retrieved transaction traces', { applicationId, count: traces.length });
       return traces;
     } catch (error) {
-      this.logger.error('Failed to get transaction traces', error, { applicationId, limit, timeRange });
+      this.logger.error('Failed to get transaction traces', error, {
+        applicationId,
+        limit,
+        timeRange,
+      });
       throw new Error(`Failed to get transaction traces: ${error.message}`);
     }
   }
 
-  async getSlowTransactionTraces(applicationId: string, limit: number = 10, timeRange?: TimeRange): Promise<TransactionTrace[]> {
+  async getSlowTransactionTraces(
+    applicationId: string,
+    limit: number = 10,
+    timeRange?: TimeRange
+  ): Promise<TransactionTrace[]> {
     try {
       const since = timeRange?.since || 'SINCE 1 hour ago';
       const until = timeRange?.until ? `UNTIL '${timeRange.until}'` : '';
-      
+
       const query = `
         SELECT name, duration, timestamp, guid, request.uri, httpResponseCode
         FROM Transaction 
@@ -280,28 +340,36 @@ export class TransactionTracer implements TransactionTracerInterface {
         ORDER BY duration DESC 
         LIMIT ${limit}
       `;
-      
+
       const result = await this.client.executeNRQL(query);
       return result.results.map(row => this.mapNRQLToTrace(row));
     } catch (error) {
-      this.logger.error('Failed to get slow transaction traces', error, { applicationId, limit, timeRange });
+      this.logger.error('Failed to get slow transaction traces', error, {
+        applicationId,
+        limit,
+        timeRange,
+      });
       throw new Error(`Failed to get slow transaction traces: ${error.message}`);
     }
   }
 
-  async getTransactionSummary(applicationId: string, transactionName: string, timeRange?: TimeRange): Promise<TransactionSummary> {
+  async getTransactionSummary(
+    applicationId: string,
+    transactionName: string,
+    timeRange?: TimeRange
+  ): Promise<TransactionSummary> {
     try {
       const cacheKey = `transaction_summary_${applicationId}_${transactionName}_${this.getTimeRangeKey(timeRange)}`;
-      
+
       // Try cache first
       const cached = await this.cache.get<TransactionSummary>(cacheKey);
       if (cached) {
         return cached;
       }
-      
+
       const since = timeRange?.since || 'SINCE 1 hour ago';
       const until = timeRange?.until ? `UNTIL '${timeRange.until}'` : '';
-      
+
       const query = `
         SELECT 
           count(*) as count,
@@ -318,10 +386,10 @@ export class TransactionTracer implements TransactionTracerInterface {
         AND name = '${transactionName}'
         ${since} ${until}
       `;
-      
+
       const result = await this.client.executeNRQL(query);
       const row = result.results[0] || {};
-      
+
       const summary: TransactionSummary = {
         name: transactionName,
         count: row.count || 0,
@@ -332,24 +400,32 @@ export class TransactionTracer implements TransactionTracerInterface {
         error_count: row.error_count || 0,
         error_rate: row.error_rate || 0,
         throughput: row.throughput || 0,
-        apdex_score: row.apdex_score
+        apdex_score: row.apdex_score,
       };
-      
+
       // Cache the result
       await this.cache.set(cacheKey, summary, this.CACHE_TTL);
-      
+
       return summary;
     } catch (error) {
-      this.logger.error('Failed to get transaction summary', error, { applicationId, transactionName, timeRange });
+      this.logger.error('Failed to get transaction summary', error, {
+        applicationId,
+        transactionName,
+        timeRange,
+      });
       throw new Error(`Failed to get transaction summary: ${error.message}`);
     }
   }
 
-  async getTransactionBreakdown(applicationId: string, transactionName: string, timeRange?: TimeRange): Promise<TraceSegment[]> {
+  async getTransactionBreakdown(
+    applicationId: string,
+    transactionName: string,
+    timeRange?: TimeRange
+  ): Promise<TraceSegment[]> {
     try {
       const since = timeRange?.since || 'SINCE 1 hour ago';
       const until = timeRange?.until ? `UNTIL '${timeRange.until}'` : '';
-      
+
       // Get breakdown by component type
       const query = `
         SELECT 
@@ -362,55 +438,64 @@ export class TransactionTracer implements TransactionTracerInterface {
         AND name = '${transactionName}'
         ${since} ${until}
       `;
-      
+
       const result = await this.client.executeNRQL(query);
       const row = result.results[0] || {};
-      
+
       const segments: TraceSegment[] = [];
-      
+
       if (row.database_duration > 0) {
         segments.push({
           name: 'Database',
           duration: row.database_duration,
           exclusive_duration: row.database_duration,
           call_count: row.call_count || 1,
-          children: []
+          children: [],
         });
       }
-      
+
       if (row.external_duration > 0) {
         segments.push({
           name: 'External Services',
           duration: row.external_duration,
           exclusive_duration: row.external_duration,
           call_count: row.call_count || 1,
-          children: []
+          children: [],
         });
       }
-      
-      const applicationTime = (row.duration || 0) - (row.database_duration || 0) - (row.external_duration || 0);
+
+      const applicationTime =
+        (row.duration || 0) - (row.database_duration || 0) - (row.external_duration || 0);
       if (applicationTime > 0) {
         segments.push({
           name: 'Application Code',
           duration: applicationTime,
           exclusive_duration: applicationTime,
           call_count: row.call_count || 1,
-          children: []
+          children: [],
         });
       }
-      
+
       return segments;
     } catch (error) {
-      this.logger.error('Failed to get transaction breakdown', error, { applicationId, transactionName, timeRange });
+      this.logger.error('Failed to get transaction breakdown', error, {
+        applicationId,
+        transactionName,
+        timeRange,
+      });
       throw new Error(`Failed to get transaction breakdown: ${error.message}`);
     }
   }
 
-  async getDatabaseTraces(applicationId: string, limit: number = 20, timeRange?: TimeRange): Promise<DatabaseTrace[]> {
+  async getDatabaseTraces(
+    applicationId: string,
+    limit: number = 20,
+    timeRange?: TimeRange
+  ): Promise<DatabaseTrace[]> {
     try {
       const since = timeRange?.since || 'SINCE 1 hour ago';
       const until = timeRange?.until ? `UNTIL '${timeRange.until}'` : '';
-      
+
       const query = `
         SELECT 
           databaseDuration as duration,
@@ -423,26 +508,34 @@ export class TransactionTracer implements TransactionTracerInterface {
         ORDER BY databaseDuration DESC 
         LIMIT ${limit}
       `;
-      
+
       const result = await this.client.executeNRQL(query);
       return result.results.map((row, index) => ({
         query: 'Query details not available from NRQL', // Would need trace details
         duration: row.duration || 0,
         call_count: row.call_count || 1,
         total_time: (row.duration || 0) * (row.call_count || 1),
-        operation: 'SELECT' // Would need to parse from actual query
+        operation: 'SELECT', // Would need to parse from actual query
       }));
     } catch (error) {
-      this.logger.error('Failed to get database traces', error, { applicationId, limit, timeRange });
+      this.logger.error('Failed to get database traces', error, {
+        applicationId,
+        limit,
+        timeRange,
+      });
       throw new Error(`Failed to get database traces: ${error.message}`);
     }
   }
 
-  async getSlowDatabaseQueries(applicationId: string, limit: number = 10, timeRange?: TimeRange): Promise<DatabaseTrace[]> {
+  async getSlowDatabaseQueries(
+    applicationId: string,
+    limit: number = 10,
+    timeRange?: TimeRange
+  ): Promise<DatabaseTrace[]> {
     try {
       const since = timeRange?.since || 'SINCE 1 hour ago';
       const until = timeRange?.until ? `UNTIL '${timeRange.until}'` : '';
-      
+
       const query = `
         SELECT 
           max(databaseDuration) as duration,
@@ -456,26 +549,33 @@ export class TransactionTracer implements TransactionTracerInterface {
         ORDER BY max(databaseDuration) DESC 
         LIMIT ${limit}
       `;
-      
+
       const result = await this.client.executeNRQL(query);
       return result.results.map(row => ({
         query: `Transaction: ${row.name}`,
         duration: row.duration || 0,
         call_count: row.call_count || 1,
         total_time: row.total_time || 0,
-        operation: 'MIXED' // Multiple operations in transaction
+        operation: 'MIXED', // Multiple operations in transaction
       }));
     } catch (error) {
-      this.logger.error('Failed to get slow database queries', error, { applicationId, limit, timeRange });
+      this.logger.error('Failed to get slow database queries', error, {
+        applicationId,
+        limit,
+        timeRange,
+      });
       throw new Error(`Failed to get slow database queries: ${error.message}`);
     }
   }
 
-  async getDatabaseOperationBreakdown(applicationId: string, timeRange?: TimeRange): Promise<DatabaseOperationSummary[]> {
+  async getDatabaseOperationBreakdown(
+    applicationId: string,
+    timeRange?: TimeRange
+  ): Promise<DatabaseOperationSummary[]> {
     try {
       const since = timeRange?.since || 'SINCE 1 hour ago';
       const until = timeRange?.until ? `UNTIL '${timeRange.until}'` : '';
-      
+
       // This is a simplified implementation - real implementation would need more detailed trace data
       const query = `
         SELECT 
@@ -488,30 +588,39 @@ export class TransactionTracer implements TransactionTracerInterface {
         AND databaseDuration IS NOT NULL
         ${since} ${until}
       `;
-      
+
       const result = await this.client.executeNRQL(query);
       const row = result.results[0] || {};
-      
+
       // Return a single summary since we don't have operation-level breakdown
-      return [{
-        operation: 'ALL_OPERATIONS',
-        count: row.count || 0,
-        total_time: row.total_time || 0,
-        average_time: row.average_time || 0,
-        max_time: row.max_time || 0,
-        percentage_of_total: 100
-      }];
+      return [
+        {
+          operation: 'ALL_OPERATIONS',
+          count: row.count || 0,
+          total_time: row.total_time || 0,
+          average_time: row.average_time || 0,
+          max_time: row.max_time || 0,
+          percentage_of_total: 100,
+        },
+      ];
     } catch (error) {
-      this.logger.error('Failed to get database operation breakdown', error, { applicationId, timeRange });
+      this.logger.error('Failed to get database operation breakdown', error, {
+        applicationId,
+        timeRange,
+      });
       throw new Error(`Failed to get database operation breakdown: ${error.message}`);
     }
   }
 
-  async getExternalTraces(applicationId: string, limit: number = 20, timeRange?: TimeRange): Promise<ExternalTrace[]> {
+  async getExternalTraces(
+    applicationId: string,
+    limit: number = 20,
+    timeRange?: TimeRange
+  ): Promise<ExternalTrace[]> {
     try {
       const since = timeRange?.since || 'SINCE 1 hour ago';
       const until = timeRange?.until ? `UNTIL '${timeRange.until}'` : '';
-      
+
       const query = `
         SELECT 
           externalDuration as duration,
@@ -524,26 +633,34 @@ export class TransactionTracer implements TransactionTracerInterface {
         ORDER BY externalDuration DESC 
         LIMIT ${limit}
       `;
-      
+
       const result = await this.client.executeNRQL(query);
       return result.results.map(row => ({
         host: row.host || 'unknown',
         library: 'HTTP', // Would need more detailed trace data
         duration: row.duration || 0,
         call_count: row.call_count || 1,
-        total_time: (row.duration || 0) * (row.call_count || 1)
+        total_time: (row.duration || 0) * (row.call_count || 1),
       }));
     } catch (error) {
-      this.logger.error('Failed to get external traces', error, { applicationId, limit, timeRange });
+      this.logger.error('Failed to get external traces', error, {
+        applicationId,
+        limit,
+        timeRange,
+      });
       throw new Error(`Failed to get external traces: ${error.message}`);
     }
   }
 
-  async getSlowExternalCalls(applicationId: string, limit: number = 10, timeRange?: TimeRange): Promise<ExternalTrace[]> {
+  async getSlowExternalCalls(
+    applicationId: string,
+    limit: number = 10,
+    timeRange?: TimeRange
+  ): Promise<ExternalTrace[]> {
     try {
       const since = timeRange?.since || 'SINCE 1 hour ago';
       const until = timeRange?.until ? `UNTIL '${timeRange.until}'` : '';
-      
+
       const query = `
         SELECT 
           max(externalDuration) as duration,
@@ -557,26 +674,33 @@ export class TransactionTracer implements TransactionTracerInterface {
         ORDER BY max(externalDuration) DESC 
         LIMIT ${limit}
       `;
-      
+
       const result = await this.client.executeNRQL(query);
       return result.results.map(row => ({
         host: row.host || 'unknown',
         library: 'HTTP',
         duration: row.duration || 0,
         call_count: row.call_count || 1,
-        total_time: row.total_time || 0
+        total_time: row.total_time || 0,
       }));
     } catch (error) {
-      this.logger.error('Failed to get slow external calls', error, { applicationId, limit, timeRange });
+      this.logger.error('Failed to get slow external calls', error, {
+        applicationId,
+        limit,
+        timeRange,
+      });
       throw new Error(`Failed to get slow external calls: ${error.message}`);
     }
   }
 
-  async getExternalServiceBreakdown(applicationId: string, timeRange?: TimeRange): Promise<ExternalServiceSummary[]> {
+  async getExternalServiceBreakdown(
+    applicationId: string,
+    timeRange?: TimeRange
+  ): Promise<ExternalServiceSummary[]> {
     try {
       const since = timeRange?.since || 'SINCE 1 hour ago';
       const until = timeRange?.until ? `UNTIL '${timeRange.until}'` : '';
-      
+
       const query = `
         SELECT 
           count(*) as count,
@@ -589,10 +713,10 @@ export class TransactionTracer implements TransactionTracerInterface {
         ${since} ${until}
         FACET host
       `;
-      
+
       const result = await this.client.executeNRQL(query);
       const totalTime = result.results.reduce((sum, row) => sum + (row.total_time || 0), 0);
-      
+
       return result.results.map(row => ({
         host: row.host || 'unknown',
         library: 'HTTP',
@@ -600,19 +724,26 @@ export class TransactionTracer implements TransactionTracerInterface {
         total_time: row.total_time || 0,
         average_time: row.average_time || 0,
         max_time: row.max_time || 0,
-        percentage_of_total: totalTime > 0 ? ((row.total_time || 0) / totalTime) * 100 : 0
+        percentage_of_total: totalTime > 0 ? ((row.total_time || 0) / totalTime) * 100 : 0,
       }));
     } catch (error) {
-      this.logger.error('Failed to get external service breakdown', error, { applicationId, timeRange });
+      this.logger.error('Failed to get external service breakdown', error, {
+        applicationId,
+        timeRange,
+      });
       throw new Error(`Failed to get external service breakdown: ${error.message}`);
     }
   }
 
-  async analyzeTransactionPerformance(applicationId: string, transactionName: string, timeRange?: TimeRange): Promise<PerformanceAnalysis> {
+  async analyzeTransactionPerformance(
+    applicationId: string,
+    transactionName: string,
+    timeRange?: TimeRange
+  ): Promise<PerformanceAnalysis> {
     try {
       const since = timeRange?.since || 'SINCE 1 hour ago';
       const until = timeRange?.until ? `UNTIL '${timeRange.until}'` : '';
-      
+
       const query = `
         SELECT 
           average(duration) as total_time,
@@ -624,17 +755,17 @@ export class TransactionTracer implements TransactionTracerInterface {
         AND name = '${transactionName}'
         ${since} ${until}
       `;
-      
+
       const result = await this.client.executeNRQL(query);
       const row = result.results[0] || {};
-      
+
       const totalTime = row.total_time || 0;
       const databaseTime = row.database_time || 0;
       const externalTime = row.external_time || 0;
       const applicationTime = totalTime - databaseTime - externalTime;
-      
+
       const segments: SegmentAnalysis[] = [];
-      
+
       if (databaseTime > 0) {
         segments.push({
           name: 'Database',
@@ -642,10 +773,10 @@ export class TransactionTracer implements TransactionTracerInterface {
           percentage: (databaseTime / totalTime) * 100,
           call_count: row.call_count || 1,
           average_time: databaseTime,
-          type: 'database'
+          type: 'database',
         });
       }
-      
+
       if (externalTime > 0) {
         segments.push({
           name: 'External Services',
@@ -653,10 +784,10 @@ export class TransactionTracer implements TransactionTracerInterface {
           percentage: (externalTime / totalTime) * 100,
           call_count: row.call_count || 1,
           average_time: externalTime,
-          type: 'external'
+          type: 'external',
         });
       }
-      
+
       if (applicationTime > 0) {
         segments.push({
           name: 'Application Code',
@@ -664,12 +795,12 @@ export class TransactionTracer implements TransactionTracerInterface {
           percentage: (applicationTime / totalTime) * 100,
           call_count: row.call_count || 1,
           average_time: applicationTime,
-          type: 'application'
+          type: 'application',
         });
       }
-      
+
       const recommendations = this.generatePerformanceRecommendations(segments);
-      
+
       return {
         transaction_name: transactionName,
         total_time: totalTime,
@@ -677,24 +808,36 @@ export class TransactionTracer implements TransactionTracerInterface {
         database_time: databaseTime,
         external_time: externalTime,
         segments,
-        recommendations
+        recommendations,
       };
     } catch (error) {
-      this.logger.error('Failed to analyze transaction performance', error, { applicationId, transactionName, timeRange });
+      this.logger.error('Failed to analyze transaction performance', error, {
+        applicationId,
+        transactionName,
+        timeRange,
+      });
       throw new Error(`Failed to analyze transaction performance: ${error.message}`);
     }
   }
 
-  async identifyBottlenecks(applicationId: string, transactionName: string, timeRange?: TimeRange): Promise<Bottleneck[]> {
+  async identifyBottlenecks(
+    applicationId: string,
+    transactionName: string,
+    timeRange?: TimeRange
+  ): Promise<Bottleneck[]> {
     try {
-      const analysis = await this.analyzeTransactionPerformance(applicationId, transactionName, timeRange);
+      const analysis = await this.analyzeTransactionPerformance(
+        applicationId,
+        transactionName,
+        timeRange
+      );
       const bottlenecks: Bottleneck[] = [];
-      
+
       // Identify segments that take more than 20% of total time
       for (const segment of analysis.segments) {
         if (segment.percentage > 20) {
           const impactScore = segment.percentage / 100;
-          
+
           bottlenecks.push({
             type: segment.type,
             name: segment.name,
@@ -704,55 +847,85 @@ export class TransactionTracer implements TransactionTracerInterface {
             call_count: segment.call_count,
             average_time: segment.average_time,
             description: `${segment.name} accounts for ${segment.percentage.toFixed(1)}% of transaction time`,
-            recommendations: this.getBottleneckRecommendations(segment.type, segment.percentage)
+            recommendations: this.getBottleneckRecommendations(segment.type, segment.percentage),
           });
         }
       }
-      
+
       // Sort by impact score
       bottlenecks.sort((a, b) => b.impact_score - a.impact_score);
-      
+
       return bottlenecks;
     } catch (error) {
-      this.logger.error('Failed to identify bottlenecks', error, { applicationId, transactionName, timeRange });
+      this.logger.error('Failed to identify bottlenecks', error, {
+        applicationId,
+        transactionName,
+        timeRange,
+      });
       throw new Error(`Failed to identify bottlenecks: ${error.message}`);
     }
   }
 
   async compareTransactionPerformance(
-    applicationId: string, 
-    transactionName: string, 
-    baselineRange: TimeRange, 
+    applicationId: string,
+    transactionName: string,
+    baselineRange: TimeRange,
     comparisonRange: TimeRange
   ): Promise<PerformanceComparison> {
     try {
       const [baselineMetrics, comparisonMetrics] = await Promise.all([
         this.getPerformanceMetrics(applicationId, transactionName, baselineRange),
-        this.getPerformanceMetrics(applicationId, transactionName, comparisonRange)
+        this.getPerformanceMetrics(applicationId, transactionName, comparisonRange),
       ]);
-      
+
       const changes: PerformanceChanges = {
-        duration_change: this.calculatePercentageChange(baselineMetrics.average_duration, comparisonMetrics.average_duration),
-        throughput_change: this.calculatePercentageChange(baselineMetrics.throughput, comparisonMetrics.throughput),
-        error_rate_change: this.calculatePercentageChange(baselineMetrics.error_rate, comparisonMetrics.error_rate),
-        database_time_change: this.calculatePercentageChange(baselineMetrics.database_time, comparisonMetrics.database_time),
-        external_time_change: this.calculatePercentageChange(baselineMetrics.external_time, comparisonMetrics.external_time),
-        application_time_change: this.calculatePercentageChange(baselineMetrics.application_time, comparisonMetrics.application_time),
-        apdex_change: baselineMetrics.apdex_score && comparisonMetrics.apdex_score ? 
-          this.calculatePercentageChange(baselineMetrics.apdex_score, comparisonMetrics.apdex_score) : undefined
+        duration_change: this.calculatePercentageChange(
+          baselineMetrics.average_duration,
+          comparisonMetrics.average_duration
+        ),
+        throughput_change: this.calculatePercentageChange(
+          baselineMetrics.throughput,
+          comparisonMetrics.throughput
+        ),
+        error_rate_change: this.calculatePercentageChange(
+          baselineMetrics.error_rate,
+          comparisonMetrics.error_rate
+        ),
+        database_time_change: this.calculatePercentageChange(
+          baselineMetrics.database_time,
+          comparisonMetrics.database_time
+        ),
+        external_time_change: this.calculatePercentageChange(
+          baselineMetrics.external_time,
+          comparisonMetrics.external_time
+        ),
+        application_time_change: this.calculatePercentageChange(
+          baselineMetrics.application_time,
+          comparisonMetrics.application_time
+        ),
+        apdex_change:
+          baselineMetrics.apdex_score && comparisonMetrics.apdex_score
+            ? this.calculatePercentageChange(
+                baselineMetrics.apdex_score,
+                comparisonMetrics.apdex_score
+              )
+            : undefined,
       };
-      
+
       const significantChanges = this.identifySignificantChanges(changes);
-      
+
       return {
         transaction_name: transactionName,
         baseline: baselineMetrics,
         comparison: comparisonMetrics,
         changes,
-        significant_changes: significantChanges
+        significant_changes: significantChanges,
       };
     } catch (error) {
-      this.logger.error('Failed to compare transaction performance', error, { applicationId, transactionName });
+      this.logger.error('Failed to compare transaction performance', error, {
+        applicationId,
+        transactionName,
+      });
       throw new Error(`Failed to compare transaction performance: ${error.message}`);
     }
   }
@@ -770,7 +943,7 @@ export class TransactionTracer implements TransactionTracerInterface {
       segments: trace.segments ? this.mapSegments(trace.segments) : [],
       attributes: trace.attributes || {},
       userAttributes: trace.user_attributes || {},
-      agentAttributes: trace.agent_attributes || {}
+      agentAttributes: trace.agent_attributes || {},
     };
   }
 
@@ -786,7 +959,7 @@ export class TransactionTracer implements TransactionTracerInterface {
       segments: [], // Would need additional API calls for detailed segments
       attributes: {},
       userAttributes: {},
-      agentAttributes: {}
+      agentAttributes: {},
     };
   }
 
@@ -801,14 +974,18 @@ export class TransactionTracer implements TransactionTracerInterface {
       sql: segment.sql,
       uri: segment.uri,
       children: segment.children ? this.mapSegments(segment.children) : [],
-      parameters: segment.parameters || {}
+      parameters: segment.parameters || {},
     }));
   }
 
-  private async getPerformanceMetrics(applicationId: string, transactionName: string, timeRange: TimeRange): Promise<PerformanceMetrics> {
+  private async getPerformanceMetrics(
+    applicationId: string,
+    transactionName: string,
+    timeRange: TimeRange
+  ): Promise<PerformanceMetrics> {
     const since = `SINCE '${timeRange.since}'`;
     const until = timeRange.until ? `UNTIL '${timeRange.until}'` : '';
-    
+
     const query = `
       SELECT 
         average(duration) as average_duration,
@@ -822,15 +999,15 @@ export class TransactionTracer implements TransactionTracerInterface {
       AND name = '${transactionName}'
       ${since} ${until}
     `;
-    
+
     const result = await this.client.executeNRQL(query);
     const row = result.results[0] || {};
-    
+
     const databaseTime = row.database_time || 0;
     const externalTime = row.external_time || 0;
     const totalTime = row.average_duration || 0;
     const applicationTime = totalTime - databaseTime - externalTime;
-    
+
     return {
       average_duration: totalTime,
       throughput: row.throughput || 0,
@@ -838,7 +1015,7 @@ export class TransactionTracer implements TransactionTracerInterface {
       apdex_score: row.apdex_score,
       database_time: databaseTime,
       external_time: externalTime,
-      application_time: applicationTime
+      application_time: applicationTime,
     };
   }
 
@@ -849,20 +1026,24 @@ export class TransactionTracer implements TransactionTracerInterface {
 
   private identifySignificantChanges(changes: PerformanceChanges): SignificantChange[] {
     const significantChanges: SignificantChange[] = [];
-    
+
     const metrics = [
       { key: 'duration_change', name: 'Response Time', value: changes.duration_change },
       { key: 'throughput_change', name: 'Throughput', value: changes.throughput_change },
       { key: 'error_rate_change', name: 'Error Rate', value: changes.error_rate_change },
       { key: 'database_time_change', name: 'Database Time', value: changes.database_time_change },
       { key: 'external_time_change', name: 'External Time', value: changes.external_time_change },
-      { key: 'application_time_change', name: 'Application Time', value: changes.application_time_change }
+      {
+        key: 'application_time_change',
+        name: 'Application Time',
+        value: changes.application_time_change,
+      },
     ];
-    
+
     for (const metric of metrics) {
       const absChange = Math.abs(metric.value);
       let significance: 'high' | 'medium' | 'low';
-      
+
       if (absChange >= 50) {
         significance = 'high';
       } else if (absChange >= 20) {
@@ -872,21 +1053,21 @@ export class TransactionTracer implements TransactionTracerInterface {
       } else {
         continue; // Skip insignificant changes
       }
-      
+
       significantChanges.push({
         metric: metric.name,
         change: metric.value,
         significance,
-        description: `${metric.name} changed by ${metric.value.toFixed(1)}%`
+        description: `${metric.name} changed by ${metric.value.toFixed(1)}%`,
       });
     }
-    
+
     return significantChanges;
   }
 
   private generatePerformanceRecommendations(segments: SegmentAnalysis[]): string[] {
     const recommendations: string[] = [];
-    
+
     for (const segment of segments) {
       if (segment.percentage > 50) {
         switch (segment.type) {
@@ -905,17 +1086,17 @@ export class TransactionTracer implements TransactionTracerInterface {
         }
       }
     }
-    
+
     if (recommendations.length === 0) {
       recommendations.push('Transaction performance appears to be well-balanced');
     }
-    
+
     return recommendations;
   }
 
   private getBottleneckRecommendations(type: string, percentage: number): string[] {
     const recommendations: string[] = [];
-    
+
     switch (type) {
       case 'database':
         recommendations.push('Optimize slow database queries');
@@ -941,7 +1122,7 @@ export class TransactionTracer implements TransactionTracerInterface {
         }
         break;
     }
-    
+
     return recommendations;
   }
 

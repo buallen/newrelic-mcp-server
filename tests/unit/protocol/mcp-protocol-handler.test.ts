@@ -155,7 +155,7 @@ describe('MCPProtocolHandler', () => {
 
       expect(response.result?.tools).toBeDefined();
       expect(response.result?.tools.length).toBeGreaterThan(0);
-      
+
       const nrqlTool = response.result?.tools.find(tool => tool.name === 'nrql_query');
       expect(nrqlTool).toBeDefined();
       expect(nrqlTool?.description).toBe('Execute NRQL queries against NewRelic data');
@@ -194,7 +194,7 @@ describe('MCPProtocolHandler', () => {
 
       expect(response.result?.resources).toBeDefined();
       expect(response.result?.resources.length).toBeGreaterThan(0);
-      
+
       const appsResource = response.result?.resources.find(
         resource => resource.uri === 'newrelic://applications'
       );
@@ -241,10 +241,9 @@ describe('MCPProtocolHandler', () => {
 
       await handler.handleNotification(notification);
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Request cancelled notification received',
-        { id: 1 }
-      );
+      expect(mockLogger.info).toHaveBeenCalledWith('Request cancelled notification received', {
+        id: 1,
+      });
     });
 
     it('should handle unknown notification', async () => {

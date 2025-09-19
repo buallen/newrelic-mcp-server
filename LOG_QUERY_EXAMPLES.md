@@ -5,6 +5,7 @@ This document provides examples of using the `log_query` tool to retrieve log da
 ## Available Query Types
 
 ### 1. Recent Logs (`recent_logs`)
+
 Retrieve the most recent log entries.
 
 ```json
@@ -17,15 +18,17 @@ Retrieve the most recent log entries.
 ```
 
 **Generated NRQL:**
+
 ```sql
-SELECT timestamp, message, hostname, level 
-FROM Log 
-SINCE 7 days ago 
-ORDER BY timestamp DESC 
+SELECT timestamp, message, hostname, level
+FROM Log
+SINCE 7 days ago
+ORDER BY timestamp DESC
 LIMIT 100
 ```
 
 ### 2. Error Logs (`error_logs`)
+
 Filter logs by error levels (ERROR, CRITICAL, FATAL).
 
 ```json
@@ -39,16 +42,18 @@ Filter logs by error levels (ERROR, CRITICAL, FATAL).
 ```
 
 **Generated NRQL:**
+
 ```sql
-SELECT timestamp, message, hostname, level, apmApplicationNames 
-FROM Log 
+SELECT timestamp, message, hostname, level, apmApplicationNames
+FROM Log
 WHERE level = 'ERROR' AND hostname = 'specific-hostname'
-SINCE 3 days ago 
-ORDER BY timestamp DESC 
+SINCE 3 days ago
+ORDER BY timestamp DESC
 LIMIT 50
 ```
 
 ### 3. Application Logs (`application_logs`)
+
 Retrieve logs from specific applications.
 
 ```json
@@ -61,17 +66,19 @@ Retrieve logs from specific applications.
 ```
 
 **Generated NRQL:**
+
 ```sql
-SELECT timestamp, message, hostname, apmApplicationNames 
-FROM Log 
-WHERE apmApplicationNames IS NOT NULL 
+SELECT timestamp, message, hostname, apmApplicationNames
+FROM Log
+WHERE apmApplicationNames IS NOT NULL
 AND apmApplicationNames LIKE '%StoreHub%'
-SINCE 1 day ago 
-ORDER BY timestamp DESC 
+SINCE 1 day ago
+ORDER BY timestamp DESC
 LIMIT 100
 ```
 
 ### 4. Infrastructure Logs (`infrastructure_logs`)
+
 Retrieve infrastructure monitoring logs.
 
 ```json
@@ -84,17 +91,19 @@ Retrieve infrastructure monitoring logs.
 ```
 
 **Generated NRQL:**
+
 ```sql
-SELECT timestamp, message, hostname, agentName 
-FROM Log 
-WHERE agentName = 'Infrastructure' 
+SELECT timestamp, message, hostname, agentName
+FROM Log
+WHERE agentName = 'Infrastructure'
 AND hostname = 'ip-10-2-0-198.ap-southeast-1.compute.internal'
-SINCE 6 hours ago 
-ORDER BY timestamp DESC 
+SINCE 6 hours ago
+ORDER BY timestamp DESC
 LIMIT 50
 ```
 
 ### 5. Custom Query (`custom_query`)
+
 Execute custom NRQL queries for advanced log analysis.
 
 ```json
@@ -107,52 +116,58 @@ Execute custom NRQL queries for advanced log analysis.
 ## Common Log Analysis Patterns
 
 ### Log Volume by Level
+
 ```sql
 SELECT count(*) FROM Log FACET level SINCE 7 days ago
 ```
 
 ### Log Volume by Hostname
+
 ```sql
 SELECT count(*) FROM Log FACET hostname SINCE 7 days ago LIMIT 10
 ```
 
 ### Log Volume by Application
+
 ```sql
-SELECT count(*) FROM Log 
-WHERE apmApplicationNames IS NOT NULL 
-FACET apmApplicationNames 
+SELECT count(*) FROM Log
+WHERE apmApplicationNames IS NOT NULL
+FACET apmApplicationNames
 SINCE 7 days ago
 ```
 
 ### Recent Errors with Context
+
 ```sql
 SELECT timestamp, message, hostname, apmApplicationNames, level
-FROM Log 
+FROM Log
 WHERE level IN ('ERROR', 'CRITICAL', 'FATAL')
-SINCE 24 hours ago 
-ORDER BY timestamp DESC 
+SINCE 24 hours ago
+ORDER BY timestamp DESC
 LIMIT 20
 ```
 
 ### Infrastructure Events Timeline
+
 ```sql
 SELECT timestamp, message, hostname
-FROM Log 
+FROM Log
 WHERE agentName = 'Infrastructure'
-SINCE 1 day ago 
-ORDER BY timestamp DESC 
+SINCE 1 day ago
+ORDER BY timestamp DESC
 LIMIT 50
 ```
 
 ### Application Performance Issues
+
 ```sql
 SELECT timestamp, message, apmApplicationNames
-FROM Log 
-WHERE message LIKE '%performance%' 
+FROM Log
+WHERE message LIKE '%performance%'
 OR message LIKE '%slow%'
 OR message LIKE '%timeout%'
-SINCE 7 days ago 
-ORDER BY timestamp DESC 
+SINCE 7 days ago
+ORDER BY timestamp DESC
 LIMIT 30
 ```
 
@@ -161,7 +176,7 @@ LIMIT 30
 Based on the log discovery results, your NewRelic account contains:
 
 - **663,474 Log events** in the last 7 days
-- **240,579,728 Transaction events** 
+- **240,579,728 Transaction events**
 - **507,711 TransactionError events**
 - **1,037,264 PageView events**
 - **17,839 JavaScriptError events**
@@ -190,7 +205,7 @@ Based on the log discovery results, your NewRelic account contains:
 ## Time Period Options
 
 - `1 hour ago` - Recent logs from the last hour
-- `6 hours ago` - Logs from the last 6 hours  
+- `6 hours ago` - Logs from the last 6 hours
 - `1 day ago` - Yesterday's logs
 - `3 days ago` - Logs from the last 3 days
 - `7 days ago` - Full week of log data (maximum retention shown)
@@ -198,6 +213,7 @@ Based on the log discovery results, your NewRelic account contains:
 ## Field Options
 
 Common fields you can include in `include_fields`:
+
 - `timestamp` - Log timestamp
 - `message` - Log message content
 - `hostname` - Server hostname
@@ -227,6 +243,7 @@ When using the NewRelic MCP server, call the `log_query` tool with your desired 
 ```
 
 The response will include:
+
 - `query_executed` - The actual NRQL query that was run
 - `result_count` - Number of log entries returned
 - `logs` - Array of log entry objects

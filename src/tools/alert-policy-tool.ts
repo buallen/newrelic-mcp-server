@@ -39,17 +39,21 @@ export class AlertPolicyTool {
           content: [
             {
               type: 'text',
-              text: JSON.stringify({
-                success: true,
-                policy: createdPolicy,
-                summary: {
-                  policyId: createdPolicy.id,
-                  policyName: createdPolicy.name,
-                  incidentPreference: createdPolicy.incident_preference,
-                  createdAt: createdPolicy.created_at,
+              text: JSON.stringify(
+                {
+                  success: true,
+                  policy: createdPolicy,
+                  summary: {
+                    policyId: createdPolicy.id,
+                    policyName: createdPolicy.name,
+                    incidentPreference: createdPolicy.incident_preference,
+                    createdAt: createdPolicy.created_at,
+                  },
+                  message: `Successfully created alert policy "${createdPolicy.name}" with ID ${createdPolicy.id}`,
                 },
-                message: `Successfully created alert policy "${createdPolicy.name}" with ID ${createdPolicy.id}`,
-              }, null, 2),
+                null,
+                2
+              ),
             },
           ],
           isError: false,
@@ -63,11 +67,15 @@ export class AlertPolicyTool {
           content: [
             {
               type: 'text',
-              text: JSON.stringify({
-                success: false,
-                error: (error as Error).message,
-                message: `Failed to create alert policy: ${(error as Error).message}`,
-              }, null, 2),
+              text: JSON.stringify(
+                {
+                  success: false,
+                  error: (error as Error).message,
+                  message: `Failed to create alert policy: ${(error as Error).message}`,
+                },
+                null,
+                2
+              ),
             },
           ],
           isError: true,

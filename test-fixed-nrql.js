@@ -10,7 +10,7 @@ async function testFixedNRQLQuery() {
   try {
     const apiKey = process.env.NEW_RELIC_API_KEY;
     const apiUrl = process.env.NEW_RELIC_API_URL || 'https://api.newrelic.com/graphql';
-    
+
     console.log('🔍 Issue identified:');
     console.log('  - GraphQL endpoint was being constructed incorrectly');
     console.log('  - Base URL: https://api.newrelic.com/v2');
@@ -29,8 +29,8 @@ async function testFixedNRQLQuery() {
         timeout: 30000,
       },
       logging: {
-        level: 'info'
-      }
+        level: 'info',
+      },
     });
 
     await server.initializeMCPOnly();
@@ -46,22 +46,22 @@ async function testFixedNRQLQuery() {
         name: 'nrql_query',
         arguments: {
           query: 'SELECT count(*) FROM Transaction',
-          accountId: '464254'
-        }
-      }
+          accountId: '464254',
+        },
+      },
     });
 
     console.log('  - Query: SELECT count(*) FROM Transaction');
     console.log('  - Account: 464254 (StoreHub)');
     const response = await server.handleRequest(query);
     const data = JSON.parse(response);
-    
+
     if (data.result && !data.result.isError) {
       console.log('🎉 SUCCESS! NRQL query executed successfully!');
       try {
         const resultText = data.result.content[0].text;
         const parsedResult = JSON.parse(resultText);
-        
+
         console.log('📊 Query Results:');
         console.log(`  - Query executed: ${parsedResult.query}`);
         console.log(`  - Results count: ${parsedResult.results.length}`);
@@ -72,7 +72,7 @@ async function testFixedNRQLQuery() {
           console.log(`  - Execution time: ${parsedResult.performanceStats.wallClockTime}ms`);
           console.log(`  - Events inspected: ${parsedResult.performanceStats.inspectedCount}`);
         }
-        
+
         // Test another query if first one worked
         console.log('\n📊 Test 2: Query with time range');
         const query2 = JSON.stringify({
@@ -83,14 +83,14 @@ async function testFixedNRQLQuery() {
             name: 'nrql_query',
             arguments: {
               query: 'SELECT count(*) FROM Transaction SINCE 1 day ago',
-              accountId: '464254'
-            }
-          }
+              accountId: '464254',
+            },
+          },
         });
 
         const response2 = await server.handleRequest(query2);
         const data2 = JSON.parse(response2);
-        
+
         if (data2.result && !data2.result.isError) {
           console.log('✅ Time range query also successful!');
           const resultText2 = data2.result.content[0].text;
@@ -100,7 +100,6 @@ async function testFixedNRQLQuery() {
           console.log('⚠️  Time range query failed:');
           console.log(`  - Error: ${data2.result?.content[0]?.text || data2.error?.message}`);
         }
-        
       } catch (parseError) {
         console.log('✅ Query successful but result parsing failed:');
         console.log(`  - Raw result: ${data.result.content[0].text}`);
@@ -118,7 +117,7 @@ async function testFixedNRQLQuery() {
     console.log('\n🔍 Testing direct GraphQL call with corrected endpoint...');
     try {
       const axios = require('axios');
-      
+
       const graphqlQuery = `
         query($accountId: Int!, $nrql: Nrql!) {
           actor {
@@ -130,32 +129,38 @@ async function testFixedNRQLQuery() {
           }
         }
       `;
-      
+
       const variables = {
         accountId: 464254,
-        nrql: 'SELECT count(*) FROM Transaction'
+        nrql: 'SELECT count(*) FROM Transaction',
       };
-      
-      const directResponse = await axios.post('https://api.newrelic.com/graphql', {
-        query: graphqlQuery,
-        variables: variables
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'API-Key': apiKey
+
+      const directResponse = await axios.post(
+        'https://api.newrelic.com/graphql',
+        {
+          query: graphqlQuery,
+          variables: variables,
         },
-        timeout: 10000
-      });
-      
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'API-Key': apiKey,
+          },
+          timeout: 10000,
+        }
+      );
+
       console.log('✅ Direct GraphQL call successful!');
-      console.log(`  - Results: ${JSON.stringify(directResponse.data.data?.actor?.account?.nrql?.results)}`);
-      
+      console.log(
+        `  - Results: ${JSON.stringify(directResponse.data.data?.actor?.account?.nrql?.results)}`
+      );
     } catch (directError) {
       console.log('❌ Direct GraphQL call failed:');
       console.log(`  - Status: ${directError.response?.status}`);
-      console.log(`  - Error: ${directError.response?.data?.errors?.[0]?.message || directError.message}`);
+      console.log(
+        `  - Error: ${directError.response?.data?.errors?.[0]?.message || directError.message}`
+      );
     }
-
   } catch (error) {
     console.error('❌ Error:', error.message);
   }

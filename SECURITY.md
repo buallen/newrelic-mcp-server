@@ -22,6 +22,7 @@ Please **do not** create a public GitHub issue for security vulnerabilities. Thi
 Send an email to: **security@yourcompany.com** (replace with actual email)
 
 Include the following information:
+
 - Description of the vulnerability
 - Steps to reproduce the issue
 - Potential impact
@@ -46,7 +47,7 @@ Include the following information:
 ### For Users
 
 1. **Keep Updated**: Always use the latest version
-2. **Secure Configuration**: 
+2. **Secure Configuration**:
    - Use strong API keys
    - Enable rate limiting
    - Use HTTPS in production
@@ -54,7 +55,7 @@ Include the following information:
 
 3. **Environment Variables**: Never commit sensitive data to version control
 
-4. **Network Security**: 
+4. **Network Security**:
    - Use firewalls to restrict access
    - Monitor network traffic
    - Use VPNs for remote access
@@ -82,13 +83,13 @@ Include the following information:
 # Example secure configuration
 security:
   rateLimit:
-    windowMs: 900000  # 15 minutes
-    max: 100         # limit each IP to 100 requests per windowMs
-  
+    windowMs: 900000 # 15 minutes
+    max: 100 # limit each IP to 100 requests per windowMs
+
   cors:
-    origin: ["https://yourdomain.com"]
+    origin: ['https://yourdomain.com']
     credentials: true
-  
+
   headers:
     contentSecurityPolicy: true
     hsts: true
@@ -106,6 +107,7 @@ We use automated tools to scan for vulnerabilities:
 ## Security Updates
 
 Security updates are released as patch versions and are clearly marked in:
+
 - Release notes
 - GitHub Security Advisories
 - Email notifications (if subscribed)
@@ -113,6 +115,7 @@ Security updates are released as patch versions and are clearly marked in:
 ## Compliance
 
 This project follows security best practices including:
+
 - OWASP Top 10 guidelines
 - Node.js security best practices
 - Docker security guidelines
@@ -121,6 +124,7 @@ This project follows security best practices including:
 ## Contact
 
 For security-related questions or concerns:
+
 - Email: security@yourcompany.com
 - GitHub: Create a private security advisory
 

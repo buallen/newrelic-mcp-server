@@ -28,11 +28,19 @@ export class MCPLogger implements Logger {
 
   error(message: string, error?: Error, meta?: Record<string, unknown>): void {
     if (this.shouldLog('error')) {
-      process.stderr.write(`[ERROR] ${message} ${error?.message || ''} ${meta ? JSON.stringify(meta) : ''}\n`);
+      process.stderr.write(
+        `[ERROR] ${message} ${error?.message || ''} ${meta ? JSON.stringify(meta) : ''}\n`
+      );
     }
   }
 
-  logAPICall(method: string, params: unknown, duration: number, success: boolean, meta?: Record<string, unknown>): void {
+  logAPICall(
+    method: string,
+    params: unknown,
+    duration: number,
+    success: boolean,
+    meta?: Record<string, unknown>
+  ): void {
     this.info(`API Call: ${method}`, {
       duration,
       success,

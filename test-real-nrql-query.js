@@ -11,7 +11,7 @@ async function testRealNRQLQuery() {
     // Use the configured API key from environment
     const apiKey = process.env.NEW_RELIC_API_KEY;
     const apiUrl = process.env.NEW_RELIC_API_URL || 'https://api.newrelic.com/graphql';
-    
+
     if (!apiKey) {
       throw new Error('NEW_RELIC_API_KEY environment variable not found');
     }
@@ -30,8 +30,8 @@ async function testRealNRQLQuery() {
         timeout: 30000,
       },
       logging: {
-        level: 'info'
-      }
+        level: 'info',
+      },
     });
 
     console.log('🚀 Initializing server with NewRelic authentication...');
@@ -47,14 +47,14 @@ async function testRealNRQLQuery() {
       params: {
         name: 'nrql_query',
         arguments: {
-          query: 'SELECT count(*) FROM Transaction SINCE 1 hour ago LIMIT 1'
-        }
-      }
+          query: 'SELECT count(*) FROM Transaction SINCE 1 hour ago LIMIT 1',
+        },
+      },
     });
 
     const basicResponse = await server.handleRequest(basicQuery);
     const basicData = JSON.parse(basicResponse);
-    
+
     if (basicData.result && !basicData.result.isError) {
       console.log('✅ Connection successful! Query executed.');
       const resultText = basicData.result.content[0].text;
@@ -78,21 +78,24 @@ async function testRealNRQLQuery() {
       params: {
         name: 'nrql_query',
         arguments: {
-          query: 'SELECT average(duration) as avgDuration, percentile(duration, 95) as p95Duration FROM Transaction FACET appName SINCE 1 hour ago LIMIT 5'
-        }
-      }
+          query:
+            'SELECT average(duration) as avgDuration, percentile(duration, 95) as p95Duration FROM Transaction FACET appName SINCE 1 hour ago LIMIT 5',
+        },
+      },
     });
 
     const perfResponse = await server.handleRequest(perfQuery);
     const perfData = JSON.parse(perfResponse);
-    
+
     if (perfData.result && !perfData.result.isError) {
       console.log('✅ Performance query successful!');
       const resultText = perfData.result.content[0].text;
       const parsedResult = JSON.parse(resultText);
       console.log(`  - Found ${parsedResult.results.length} applications`);
       parsedResult.results.forEach((app, index) => {
-        console.log(`  - App ${index + 1}: ${app.appName || 'Unknown'} - Avg: ${app.avgDuration?.toFixed(2)}ms, P95: ${app.p95Duration?.toFixed(2)}ms`);
+        console.log(
+          `  - App ${index + 1}: ${app.appName || 'Unknown'} - Avg: ${app.avgDuration?.toFixed(2)}ms, P95: ${app.p95Duration?.toFixed(2)}ms`
+        );
       });
     } else {
       console.log('⚠️  Performance query had issues:');
@@ -108,14 +111,15 @@ async function testRealNRQLQuery() {
       params: {
         name: 'nrql_query',
         arguments: {
-          query: 'SELECT percentage(count(*), WHERE error IS true) as errorRate, count(*) as totalTransactions FROM Transaction SINCE 1 hour ago'
-        }
-      }
+          query:
+            'SELECT percentage(count(*), WHERE error IS true) as errorRate, count(*) as totalTransactions FROM Transaction SINCE 1 hour ago',
+        },
+      },
     });
 
     const errorResponse = await server.handleRequest(errorQuery);
     const errorData = JSON.parse(errorResponse);
-    
+
     if (errorData.result && !errorData.result.isError) {
       console.log('✅ Error rate query successful!');
       const resultText = errorData.result.content[0].text;
@@ -134,7 +138,6 @@ async function testRealNRQLQuery() {
     console.log('  ✅ Execute real NRQL queries against your data');
     console.log('  ✅ Return structured results with metadata');
     console.log('  ✅ Handle complex queries with facets and functions');
-
   } catch (error) {
     console.error('❌ Error during real query test:', error.message);
     if (error.message.includes('401') || error.message.includes('403')) {

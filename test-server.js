@@ -31,10 +31,9 @@ async function testNewRelicConnection() {
     console.log('Results:', JSON.stringify(nrqlResult.results, null, 2));
 
     console.log('\n🎉 All tests passed! NewRelic MCP Server is working.');
-
   } catch (error) {
     console.error('❌ Test failed:', error.message);
-    
+
     // Provide troubleshooting information
     console.log('\n🔧 Troubleshooting:');
     console.log('1. Check your NEW_RELIC_API_KEY environment variable');
@@ -45,7 +44,7 @@ async function testNewRelicConnection() {
     const accountId = process.env.NEWRELIC_ACCOUNT_ID || process.env.NEW_RELIC_ACCOUNT_ID;
     console.log('- API Key:', apiKey ? '✅ Set (' + apiKey.substring(0, 8) + '...)' : '❌ Not set');
     console.log('- Account ID:', accountId || 'Using default: 1234567');
-    
+
     process.exit(1);
   }
 }
@@ -56,7 +55,7 @@ async function testCampaignServiceAnalysis() {
   try {
     // Search for campaign service incidents
     const campaignIncidents = await newRelicClient.searchIncidents('campaign');
-    
+
     if (campaignIncidents.length === 0) {
       console.log('ℹ️  No campaign-related incidents found in the last 24 hours');
       return;
@@ -68,7 +67,7 @@ async function testCampaignServiceAnalysis() {
       byPriority: {},
       byState: {},
       recentIncidents: campaignIncidents.slice(0, 5),
-      timeRange: '24 hours'
+      timeRange: '24 hours',
     };
 
     campaignIncidents.forEach(incident => {
@@ -80,7 +79,7 @@ async function testCampaignServiceAnalysis() {
     console.log(`- Total incidents: ${analysis.total}`);
     console.log(`- By priority:`, analysis.byPriority);
     console.log(`- By state:`, analysis.byState);
-    
+
     if (analysis.recentIncidents.length > 0) {
       console.log('\n🔍 Recent Campaign Incidents:');
       analysis.recentIncidents.forEach((incident, index) => {
@@ -93,7 +92,6 @@ async function testCampaignServiceAnalysis() {
         console.log();
       });
     }
-
   } catch (error) {
     console.error('❌ Campaign analysis failed:', error.message);
   }

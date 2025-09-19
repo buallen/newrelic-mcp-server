@@ -285,7 +285,14 @@ export interface IncidentAnalysis {
 
 export interface TimelineEvent {
   timestamp: string;
-  type: 'incident_opened' | 'violation_started' | 'violation_ended' | 'incident_acknowledged' | 'incident_closed' | 'deployment' | 'alert_triggered';
+  type:
+    | 'incident_opened'
+    | 'violation_started'
+    | 'violation_ended'
+    | 'incident_acknowledged'
+    | 'incident_closed'
+    | 'deployment'
+    | 'alert_triggered';
   description: string;
   source: string;
   metadata?: Record<string, any>;
@@ -327,7 +334,12 @@ export interface CorrelatedEvent {
 }
 
 export interface PossibleCause {
-  type: 'code_deployment' | 'infrastructure_issue' | 'external_dependency' | 'configuration_change' | 'resource_exhaustion';
+  type:
+    | 'code_deployment'
+    | 'infrastructure_issue'
+    | 'external_dependency'
+    | 'configuration_change'
+    | 'resource_exhaustion';
   description: string;
   probability: number; // 0-1 probability score
   evidence: Evidence[];
@@ -510,7 +522,7 @@ export enum NewRelicErrorType {
   RESOURCE_NOT_FOUND = 'RESOURCE_NOT_FOUND',
   INTERNAL_SERVER_ERROR = 'INTERNAL_SERVER_ERROR',
   TIMEOUT_ERROR = 'TIMEOUT_ERROR',
-  QUOTA_EXCEEDED = 'QUOTA_EXCEEDED'
+  QUOTA_EXCEEDED = 'QUOTA_EXCEEDED',
 }
 
 export interface NewRelicError extends Error {
