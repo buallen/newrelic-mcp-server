@@ -180,46 +180,47 @@ jobs:
         scan-ref: '.'
         format: 'table'
 
-  release:
-    name: Release
-    runs-on: ubuntu-latest
-    needs: [test, build]
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        cache: 'npm'
-    
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: build-files
-        path: dist/
-    
-    - name: Create Release
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        # 创建发布包
-        npm pack
-        
-        # 获取版本号
-        VERSION=$(node -p "require('./package.json').version")
-        
-        # 创建 GitHub Release
-        gh release create "v$VERSION" \
-          --title "Release v$VERSION" \
-          --notes "Automated release v$VERSION" \
-          --latest \
-          *.tgz
+  # Temporarily disabled until GitHub token has release permissions
+  # release:
+  #   name: Release
+  #   runs-on: ubuntu-latest
+  #   needs: [test, build]
+  #   if: github.ref == 'refs/heads/main'
+  #   
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v4
+  #     with:
+  #       fetch-depth: 0
+  #   
+  #   - name: Setup Node.js
+  #     uses: actions/setup-node@v4
+  #     with:
+  #       node-version: '20.x'
+  #       cache: 'npm'
+  #   
+  #   - name: Install dependencies
+  #     run: npm ci
+  #   
+  #   - name: Download build artifacts
+  #     uses: actions/download-artifact@v4
+  #     with:
+  #       name: build-files
+  #       path: dist/
+  #   
+  #   - name: Create Release
+  #     env:
+  #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     run: |
+  #       # 创建发布包
+  #       npm pack
+  #       
+  #       # 获取版本号
+  #       VERSION=$(node -p "require('./package.json').version")
+  #       
+  #       # 创建 GitHub Release
+  #       gh release create "v$VERSION" \
+  #         --title "Release v$VERSION" \
+  #         --notes "Automated release v$VERSION" \
+  #         --latest \
+  #         *.tgz
