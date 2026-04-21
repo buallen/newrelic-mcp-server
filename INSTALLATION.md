@@ -7,6 +7,7 @@ NewRelic MCP Server 是一个功能完整的 Model Context Protocol (MCP) 服务
 ## 系统要求
 
 ### 最低要求
+
 - **Node.js**: 18.0.0 或更高版本
 - **npm**: 8.0.0 或更高版本
 - **内存**: 最少 512MB RAM
@@ -14,12 +15,14 @@ NewRelic MCP Server 是一个功能完整的 Model Context Protocol (MCP) 服务
 - **操作系统**: macOS, Linux, 或 Windows
 
 ### 推荐配置
+
 - **Node.js**: 20.0.0 或更高版本
 - **内存**: 2GB RAM 或更多
 - **存储**: 5GB 可用空间
 - **CPU**: 2核心或更多
 
 ### 依赖服务
+
 - **NewRelic 账户**: 需要有效的 NewRelic 账户和 API 密钥
 - **Redis** (可选): 用于分布式缓存
 - **Docker** (可选): 用于容器化部署
@@ -119,11 +122,13 @@ npm run dev
 #### 1.1 安装 Node.js
 
 **macOS (使用 Homebrew):**
+
 ```bash
 brew install node@20
 ```
 
 **Ubuntu/Debian:**
+
 ```bash
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt-get install -y nodejs
@@ -250,6 +255,7 @@ curl http://localhost:3000/health
 ```
 
 预期响应：
+
 ```json
 {
   "status": "healthy",
@@ -285,6 +291,7 @@ curl -X POST http://localhost:3000/mcp \
 ```
 
 预期响应：
+
 ```json
 {
   "jsonrpc": "2.0",
@@ -349,20 +356,22 @@ pm2 logs newrelic-mcp-server
 
 ```javascript
 module.exports = {
-  apps: [{
-    name: 'newrelic-mcp-server',
-    script: 'dist/index.js',
-    instances: 'max',
-    exec_mode: 'cluster',
-    env: {
-      NODE_ENV: 'production',
-      PORT: 3000
+  apps: [
+    {
+      name: 'newrelic-mcp-server',
+      script: 'dist/index.js',
+      instances: 'max',
+      exec_mode: 'cluster',
+      env: {
+        NODE_ENV: 'production',
+        PORT: 3000,
+      },
+      error_file: './logs/err.log',
+      out_file: './logs/out.log',
+      log_file: './logs/combined.log',
+      time: true,
     },
-    error_file: './logs/err.log',
-    out_file: './logs/out.log',
-    log_file: './logs/combined.log',
-    time: true
-  }]
+  ],
 };
 ```
 
@@ -395,8 +404,8 @@ services:
   newrelic-mcp-server:
     build: .
     ports:
-      - "3000:3000"
-      - "9090:9090"
+      - '3000:3000'
+      - '9090:9090'
     environment:
       - NEWRELIC_API_KEY=${NEWRELIC_API_KEY}
       - NEWRELIC_ACCOUNT_ID=${NEWRELIC_ACCOUNT_ID}
@@ -406,7 +415,7 @@ services:
       - redis
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -414,7 +423,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - '6379:6379'
     restart: unless-stopped
     command: redis-server --appendonly yes
     volumes:
@@ -449,10 +458,10 @@ kind: ConfigMap
 metadata:
   name: newrelic-mcp-config
 data:
-  LOG_LEVEL: "info"
-  CACHE_TYPE: "redis"
-  REDIS_HOST: "redis-service"
-  ENABLE_METRICS: "true"
+  LOG_LEVEL: 'info'
+  CACHE_TYPE: 'redis'
+  REDIS_HOST: 'redis-service'
+  ENABLE_METRICS: 'true'
 ```
 
 创建 `k8s/secret.yaml`：
@@ -488,35 +497,35 @@ spec:
         app: newrelic-mcp-server
     spec:
       containers:
-      - name: newrelic-mcp-server
-        image: newrelic-mcp-server:latest
-        ports:
-        - containerPort: 3000
-        - containerPort: 9090
-        envFrom:
-        - configMapRef:
-            name: newrelic-mcp-config
-        - secretRef:
-            name: newrelic-mcp-secrets
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "250m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 3000
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 3000
-          initialDelaySeconds: 5
-          periodSeconds: 5
+        - name: newrelic-mcp-server
+          image: newrelic-mcp-server:latest
+          ports:
+            - containerPort: 3000
+            - containerPort: 9090
+          envFrom:
+            - configMapRef:
+                name: newrelic-mcp-config
+            - secretRef:
+                name: newrelic-mcp-secrets
+          resources:
+            requests:
+              memory: '256Mi'
+              cpu: '250m'
+            limits:
+              memory: '512Mi'
+              cpu: '500m'
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
 ```
 
 创建 `k8s/service.yaml`：
@@ -530,12 +539,12 @@ spec:
   selector:
     app: newrelic-mcp-server
   ports:
-  - name: http
-    port: 80
-    targetPort: 3000
-  - name: metrics
-    port: 9090
-    targetPort: 9090
+    - name: http
+      port: 80
+      targetPort: 3000
+    - name: metrics
+      port: 9090
+      targetPort: 9090
   type: LoadBalancer
 ```
 
@@ -623,6 +632,7 @@ export CACHE_TTL=600
 **症状**: 服务启动时显示 NewRelic API 连接错误
 
 **解决方案**:
+
 ```bash
 # 验证 API 密钥
 curl -H "Api-Key: YOUR_API_KEY" \
@@ -641,6 +651,7 @@ echo $NEWRELIC_ACCOUNT_ID
 **症状**: 服务频繁重启或响应缓慢
 
 **解决方案**:
+
 ```bash
 # 增加内存限制
 export NODE_OPTIONS="--max-old-space-size=4096"
@@ -657,6 +668,7 @@ export CACHE_MAX_SIZE=500
 **症状**: 服务无法启动，提示端口被占用
 
 **解决方案**:
+
 ```bash
 # 查找占用端口的进程
 lsof -i :3000

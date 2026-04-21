@@ -127,7 +127,11 @@ export class QueryBuilder {
               conditions.push(`NOT ${key} = ${this.quoteValue(operatorValue)}`);
               break;
             default:
-              this.logger.warn('Unknown operator in where clause', { operator, key, value: operatorValue });
+              this.logger.warn('Unknown operator in where clause', {
+                operator,
+                key,
+                value: operatorValue,
+              });
           }
         }
       } else {
@@ -149,13 +153,16 @@ export class QueryBuilder {
   }
 
   // Build common NRQL queries
-  buildApplicationMetricsQuery(appName: string, timeRange?: { since?: string; until?: string }): string {
+  buildApplicationMetricsQuery(
+    appName: string,
+    timeRange?: { since?: string; until?: string }
+  ): string {
     const options: NRQLQueryOptions = {
       select: [
         'average(duration) as avg_response_time',
         'rate(count(*), 1 minute) as throughput',
         'percentage(count(*), WHERE error IS true) as error_rate',
-        'apdex(duration, t: 0.5) as apdex_score'
+        'apdex(duration, t: 0.5) as apdex_score',
       ],
       from: 'Transaction',
       where: { appName },
@@ -172,7 +179,7 @@ export class QueryBuilder {
       select: [
         'count(*) as error_count',
         'latest(message) as latest_message',
-        'latest(stack) as latest_stack'
+        'latest(stack) as latest_stack',
       ],
       from: 'TransactionError',
       where: { appName },
@@ -186,13 +193,17 @@ export class QueryBuilder {
     return this.buildNRQL(options);
   }
 
-  buildSlowTransactionsQuery(appName: string, threshold: number = 1.0, timeRange?: { since?: string; until?: string }): string {
+  buildSlowTransactionsQuery(
+    appName: string,
+    threshold: number = 1.0,
+    timeRange?: { since?: string; until?: string }
+  ): string {
     const options: NRQLQueryOptions = {
       select: ['name', 'duration', 'timestamp'],
       from: 'Transaction',
       where: {
         appName,
-        duration: { $gt: threshold }
+        duration: { $gt: threshold },
       },
       orderBy: 'duration DESC',
       limit: 100,
@@ -208,12 +219,12 @@ export class QueryBuilder {
       select: [
         'average(databaseDuration) as avg_db_time',
         'max(databaseDuration) as max_db_time',
-        'count(*) as query_count'
+        'count(*) as query_count',
       ],
       from: 'Transaction',
       where: {
         appName,
-        databaseDuration: { $gt: 0 }
+        databaseDuration: { $gt: 0 },
       },
       facet: ['databaseType'],
       timeseries: '5 minutes',
@@ -224,12 +235,15 @@ export class QueryBuilder {
     return this.buildNRQL(options);
   }
 
-  buildInfrastructureQuery(hostname?: string, timeRange?: { since?: string; until?: string }): string {
+  buildInfrastructureQuery(
+    hostname?: string,
+    timeRange?: { since?: string; until?: string }
+  ): string {
     const options: NRQLQueryOptions = {
       select: [
         'average(cpuPercent) as avg_cpu',
         'average(memoryUsedPercent) as avg_memory',
-        'average(diskUsedPercent) as avg_disk'
+        'average(diskUsedPercent) as avg_disk',
       ],
       from: 'SystemSample',
       where: hostname ? { hostname } : undefined,
@@ -244,7 +258,7 @@ export class QueryBuilder {
   // Build GraphQL queries for entities
   buildEntitySearchQuery(searchTerm: string, entityTypes?: string[]): string {
     const typeFilter = entityTypes ? `, type: [${entityTypes.map(t => `"${t}"`).join(', ')}]` : '';
-    
+
     return `
       query {
         actor {
@@ -282,11 +296,14 @@ export class QueryBuilder {
     `;
   }
 
-  buildGoldenMetricsQuery(entityGuids: string[], timeRange?: { since?: string; until?: string }): string {
+  buildGoldenMetricsQuery(
+    entityGuids: string[],
+    timeRange?: { since?: string; until?: string }
+  ): string {
     const guidsArray = entityGuids.map(guid => `"${guid}"`).join(', ');
     const sinceParam = timeRange?.since ? `, since: ${new Date(timeRange.since).getTime()}` : '';
     const untilParam = timeRange?.until ? `, until: ${new Date(timeRange.until).getTime()}` : '';
-    
+
     return `
       query {
         actor {
@@ -347,9 +364,19 @@ export class QueryBuilder {
     }
 
     // Check for common keywords in correct order
-    const keywordOrder = ['SELECT', 'FROM', 'WHERE', 'FACET', 'TIMESERIES', 'ORDER BY', 'LIMIT', 'SINCE', 'UNTIL'];
+    const keywordOrder = [
+      'SELECT',
+      'FROM',
+      'WHERE',
+      'FACET',
+      'TIMESERIES',
+      'ORDER BY',
+      'LIMIT',
+      'SINCE',
+      'UNTIL',
+    ];
     let lastKeywordIndex = -1;
-    
+
     for (const keyword of keywordOrder) {
       const index = upperQuery.indexOf(keyword);
       if (index !== -1) {
@@ -423,21 +450,21 @@ export class QueryBuilder {
   getCommonAttributes(eventType: string): string[] {
     const attributeMap: Record<string, string[]> = {
       Transaction: [
-        'appName', 'name', 'duration', 'timestamp', 'error', 'httpResponseCode',
-        'databaseDuration', 'databaseCallCount', 'externalDuration', 'externalCallCount'
+        'appName',
+        'name',
+        'duration',
+        'timestamp',
+        'error',
+        'httpResponseCode',
+        'databaseDuration',
+        'databaseCallCount',
+        'externalDuration',
+        'externalCallCount',
       ],
-      TransactionError: [
-        'appName', 'transactionName', 'error.class', 'error.message', 'timestamp'
-      ],
-      PageView: [
-        'appName', 'name', 'duration', 'timestamp', 'city', 'countryCode', 'deviceType'
-      ],
-      SystemSample: [
-        'hostname', 'cpuPercent', 'memoryUsedPercent', 'diskUsedPercent', 'timestamp'
-      ],
-      Log: [
-        'hostname', 'message', 'level', 'timestamp', 'service', 'environment'
-      ],
+      TransactionError: ['appName', 'transactionName', 'error.class', 'error.message', 'timestamp'],
+      PageView: ['appName', 'name', 'duration', 'timestamp', 'city', 'countryCode', 'deviceType'],
+      SystemSample: ['hostname', 'cpuPercent', 'memoryUsedPercent', 'diskUsedPercent', 'timestamp'],
+      Log: ['hostname', 'message', 'level', 'timestamp', 'service', 'environment'],
     };
 
     return attributeMap[eventType] || [];

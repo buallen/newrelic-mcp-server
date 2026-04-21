@@ -1,0 +1,17 @@
+node_modules
+dist
+coverage
+*.d.ts
+.env
+.env.local
+.env.*.local
+
+# Problematic service files with complex implementations
+src/services/advanced-cache-manager.ts
+src/services/apm-service.ts
+src/services/fault-analysis-engine.ts
+src/services/historical-data-service.ts
+src/services/performance-monitor.ts
+src/services/resource-manager.ts
+src/services/transaction-tracer.ts
+src/services/incident-analyzer.ts

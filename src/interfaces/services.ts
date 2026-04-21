@@ -56,7 +56,7 @@ export interface AlertManager {
   updatePolicy(policyId: string, updates: Partial<AlertPolicyInput>): Promise<AlertPolicy>;
   deletePolicy(policyId: string): Promise<boolean>;
   getPolicies(filters?: PolicyFilters): Promise<AlertPolicy[]>;
-  getPolicy(policyId: string): Promise<AlertPolicy>;
+  getPolicy(policyId: string): Promise<AlertPolicy | null>;
 
   // Condition management
   createCondition(policyId: string, condition: AlertConditionInput): Promise<AlertCondition>;
@@ -66,7 +66,7 @@ export interface AlertManager {
   ): Promise<AlertCondition>;
   deleteCondition(conditionId: string): Promise<boolean>;
   getConditions(policyId: string): Promise<AlertCondition[]>;
-  getCondition(conditionId: string): Promise<AlertCondition>;
+  getCondition(conditionId: string): Promise<AlertCondition | null>;
 
   // Notification channels
   getNotificationChannels(): Promise<NotificationChannel[]>;
@@ -158,10 +158,7 @@ export interface IncidentAnalyzer {
 
   // Correlation analysis
   findCorrelatedEvents(incident: Incident): Promise<ServiceCorrelatedEvent[]>;
-  analyzeMetricCorrelations(
-    entityId: string,
-    timeRange: TimeRange
-  ): Promise<MetricCorrelation[]>;
+  analyzeMetricCorrelations(entityId: string, timeRange: TimeRange): Promise<MetricCorrelation[]>;
 }
 
 export interface ServiceCorrelatedEvent {
@@ -207,11 +204,11 @@ export interface CacheManager {
   clear(): Promise<void>;
   exists(key: string): Promise<boolean>;
   ttl(key: string): Promise<number>;
-  
+
   // Bulk operations
   mget<T>(keys: string[]): Promise<Array<T | null>>;
   mset<T>(entries: Array<{ key: string; value: T; ttl?: number }>): Promise<void>;
-  
+
   // Pattern operations
   keys(pattern: string): Promise<string[]>;
   deletePattern(pattern: string): Promise<number>;

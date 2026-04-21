@@ -82,7 +82,10 @@ export class MCPProtocolHandlerImpl implements MCPProtocolHandler {
       return {
         jsonrpc: '2.0',
         id: request.id,
-        error: error instanceof Error ? this.createMCPError(error) : this.createMCPError(new Error('Unknown error')),
+        error:
+          error instanceof Error
+            ? this.createMCPError(error)
+            : this.createMCPError(new Error('Unknown error')),
       };
     }
   }
@@ -96,7 +99,10 @@ export class MCPProtocolHandlerImpl implements MCPProtocolHandler {
           this.logger.info('Client initialized notification received');
           break;
         case 'notifications/cancelled':
-          this.logger.info('Request cancelled notification received', notification.params);
+          this.logger.info(
+            'Request cancelled notification received',
+            notification.params as Record<string, unknown>
+          );
           break;
         default:
           this.logger.warn('Unknown notification method', { method: notification.method });
@@ -120,11 +126,7 @@ export class MCPProtocolHandlerImpl implements MCPProtocolHandler {
     this.logger.info('Handling initialize request', { clientInfo: request.params.clientInfo });
 
     if (this.initialized && this.clientInfo) {
-      throw this.createError(
-        -32000,
-        'Server already initialized',
-        ErrorType.VALIDATION_ERROR
-      );
+      throw this.createError(-32000, 'Server already initialized', ErrorType.VALIDATION_ERROR);
     }
 
     // Protocol version negotiation - support both 2024-11-05 and 2025-06-18
@@ -162,11 +164,7 @@ export class MCPProtocolHandlerImpl implements MCPProtocolHandler {
     this.logger.debug('Handling tools list request');
 
     if (!this.initialized) {
-      throw this.createError(
-        -32000,
-        'Server not initialized',
-        ErrorType.VALIDATION_ERROR
-      );
+      throw this.createError(-32000, 'Server not initialized', ErrorType.VALIDATION_ERROR);
     }
 
     // This will be populated by the tool registry in later tasks
@@ -175,22 +173,22 @@ export class MCPProtocolHandlerImpl implements MCPProtocolHandler {
         name: 'nrql_query',
         description: 'Execute NRQL queries against NewRelic data',
         inputSchema: {
-          type: 'object',
+          type: 'object' as const,
           properties: {
             query: {
-              type: 'string',
+              type: 'string' as const,
               description: 'The NRQL query to execute',
             },
             accountId: {
-              type: 'string',
+              type: 'string' as const,
               description: 'NewRelic account ID (optional)',
             },
             timeout: {
-              type: 'number',
+              type: 'number' as const,
               description: 'Query timeout in milliseconds',
             },
             limit: {
-              type: 'number',
+              type: 'number' as const,
               description: 'Maximum number of results',
             },
           },
@@ -201,15 +199,15 @@ export class MCPProtocolHandlerImpl implements MCPProtocolHandler {
         name: 'create_alert_policy',
         description: 'Create a new alert policy',
         inputSchema: {
-          type: 'object',
+          type: 'object' as const,
           properties: {
             name: {
-              type: 'string',
+              type: 'string' as const,
               description: 'Policy name',
             },
             incident_preference: {
-              type: 'string',
-              enum: ['PER_POLICY', 'PER_CONDITION', 'PER_CONDITION_AND_TARGET'],
+              type: 'string' as const,
+              enum: ['PER_POLICY', 'PER_CONDITION', 'PER_CONDITION_AND_TARGET'] as const,
               description: 'How incidents are created',
             },
           },
@@ -220,14 +218,66 @@ export class MCPProtocolHandlerImpl implements MCPProtocolHandler {
         name: 'analyze_incident',
         description: 'Analyze an incident for root cause and recommendations',
         inputSchema: {
-          type: 'object',
+          type: 'object' as const,
           properties: {
             incidentId: {
-              type: 'string',
+              type: 'string' as const,
               description: 'The incident ID to analyze',
             },
           },
           required: ['incidentId'],
+        },
+      },
+      {
+        name: 'log_query',
+        description: 'Query NewRelic log data with common patterns for recent time periods',
+        inputSchema: {
+          type: 'object' as const,
+          properties: {
+            query_type: {
+              type: 'string' as const,
+              enum: [
+                'recent_logs',
+                'error_logs',
+                'application_logs',
+                'infrastructure_logs',
+                'custom_query',
+              ] as const,
+              description: 'Type of log query to execute',
+            },
+            time_period: {
+              type: 'string' as const,
+              enum: ['1 hour ago', '6 hours ago', '1 day ago', '3 days ago', '7 days ago'] as const,
+              description: 'Time period for log retrieval',
+            },
+            limit: {
+              type: 'number' as const,
+              description: 'Maximum number of log entries to return (1-1000)',
+            },
+            log_level: {
+              type: 'string' as const,
+              enum: ['DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL'] as const,
+              description: 'Filter logs by level (for error_logs type)',
+            },
+            hostname: {
+              type: 'string' as const,
+              description: 'Filter logs by hostname',
+            },
+            application_name: {
+              type: 'string' as const,
+              description: 'Filter logs by application name',
+            },
+            custom_nrql: {
+              type: 'string' as const,
+              description: 'Custom NRQL query for log data (used with custom_query type)',
+            },
+            include_fields: {
+              type: 'array' as const,
+              items: { type: 'string' as const },
+              description: 'Specific fields to include in results',
+            },
+          },
+          required: ['query_type'],
         },
       },
     ];
@@ -248,11 +298,7 @@ export class MCPProtocolHandlerImpl implements MCPProtocolHandler {
     });
 
     if (!this.initialized) {
-      throw this.createError(
-        -32000,
-        'Server not initialized',
-        ErrorType.VALIDATION_ERROR
-      );
+      throw this.createError(-32000, 'Server not initialized', ErrorType.VALIDATION_ERROR);
     }
 
     // Tool execution will be implemented in later tasks
@@ -276,11 +322,7 @@ export class MCPProtocolHandlerImpl implements MCPProtocolHandler {
     this.logger.debug('Handling resources list request');
 
     if (!this.initialized) {
-      throw this.createError(
-        -32000,
-        'Server not initialized',
-        ErrorType.VALIDATION_ERROR
-      );
+      throw this.createError(-32000, 'Server not initialized', ErrorType.VALIDATION_ERROR);
     }
 
     // Resources will be populated by the resource registry in later tasks
@@ -318,11 +360,7 @@ export class MCPProtocolHandlerImpl implements MCPProtocolHandler {
     this.logger.debug('Handling resource read request', { uri: request.params.uri });
 
     if (!this.initialized) {
-      throw this.createError(
-        -32000,
-        'Server not initialized',
-        ErrorType.VALIDATION_ERROR
-      );
+      throw this.createError(-32000, 'Server not initialized', ErrorType.VALIDATION_ERROR);
     }
 
     // Resource reading will be implemented in later tasks
@@ -346,27 +384,15 @@ export class MCPProtocolHandlerImpl implements MCPProtocolHandler {
 
   private validateRequest(request: MCPRequest): void {
     if (!request.jsonrpc || request.jsonrpc !== '2.0') {
-      throw this.createError(
-        -32600,
-        'Invalid JSON-RPC version',
-        ErrorType.VALIDATION_ERROR
-      );
+      throw this.createError(-32600, 'Invalid JSON-RPC version', ErrorType.VALIDATION_ERROR);
     }
 
     if (request.id === undefined || request.id === null) {
-      throw this.createError(
-        -32600,
-        'Missing request ID',
-        ErrorType.VALIDATION_ERROR
-      );
+      throw this.createError(-32600, 'Missing request ID', ErrorType.VALIDATION_ERROR);
     }
 
     if (!request.method || typeof request.method !== 'string') {
-      throw this.createError(
-        -32600,
-        'Invalid or missing method',
-        ErrorType.VALIDATION_ERROR
-      );
+      throw this.createError(-32600, 'Invalid or missing method', ErrorType.VALIDATION_ERROR);
     }
   }
 

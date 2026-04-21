@@ -39,17 +39,21 @@ export class NRQLTool {
           content: [
             {
               type: 'text',
-              text: JSON.stringify({
-                query: nrqlQuery.query,
-                results: result.results,
-                metadata: result.metadata,
-                performanceStats: result.performanceStats,
-                summary: {
-                  totalResults: result.results.length,
-                  executionTime: result.performanceStats.wallClockTime,
-                  dataScanned: result.performanceStats.inspectedCount,
+              text: JSON.stringify(
+                {
+                  query: nrqlQuery.query,
+                  results: result.results,
+                  metadata: result.metadata,
+                  performanceStats: result.performanceStats,
+                  summary: {
+                    totalResults: result.results.length,
+                    executionTime: result.performanceStats?.wallClockTime || 0,
+                    dataScanned: result.performanceStats?.inspectedCount || 0,
+                  },
                 },
-              }, null, 2),
+                null,
+                2
+              ),
             },
           ],
           isError: false,

@@ -23,23 +23,15 @@ export class AuthMiddleware {
       try {
         // Extract API key from request params or headers
         const apiKey = this.extractApiKey(request);
-        
+
         if (!apiKey) {
-          throw this.createError(
-            -32000,
-            'API key required',
-            ErrorType.AUTHENTICATION_ERROR
-          );
+          throw this.createError(-32000, 'API key required', ErrorType.AUTHENTICATION_ERROR);
         }
 
         // Validate API key
         const isValid = await this.authService.validateApiKey(apiKey);
         if (!isValid) {
-          throw this.createError(
-            -32000,
-            'Invalid API key',
-            ErrorType.AUTHENTICATION_ERROR
-          );
+          throw this.createError(-32000, 'Invalid API key', ErrorType.AUTHENTICATION_ERROR);
         }
 
         // Check permissions for the requested operation

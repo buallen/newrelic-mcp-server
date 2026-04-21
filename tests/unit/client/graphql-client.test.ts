@@ -225,7 +225,9 @@ describe('GraphQLClient', () => {
         accountId: '123456',
       };
 
-      await expect(client.executeNRQL(query)).rejects.toThrow('NRQL query failed: Invalid NRQL syntax');
+      await expect(client.executeNRQL(query)).rejects.toThrow(
+        'NRQL query failed: Invalid NRQL syntax'
+      );
     });
   });
 
@@ -456,19 +458,14 @@ describe('GraphQLClient', () => {
 
       const result = await client.getEventTypes(123456);
 
-      expect(result).toEqual([
-        'Transaction',
-        'TransactionError',
-        'PageView',
-        'SystemSample',
-      ]);
+      expect(result).toEqual(['Transaction', 'TransactionError', 'PageView', 'SystemSample']);
     });
   });
 
   describe('utility methods', () => {
     it('should update API key', () => {
       const newApiKey = 'new-api-key';
-      
+
       client.updateApiKey(newApiKey);
 
       expect(mockAxiosInstance.defaults.headers['API-Key']).toBe(newApiKey);

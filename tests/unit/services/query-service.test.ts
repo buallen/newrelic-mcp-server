@@ -176,9 +176,7 @@ describe('QueryService', () => {
         suggestions: [],
       });
 
-      await expect(queryService.executeQuery(query)).rejects.toThrow(
-        'Invalid NRQL query:'
-      );
+      await expect(queryService.executeQuery(query)).rejects.toThrow('Invalid NRQL query:');
 
       expect(mockNewRelicClient.executeNRQL).not.toHaveBeenCalled();
     });
@@ -195,9 +193,7 @@ describe('QueryService', () => {
         suggestions: [],
       });
       mockCacheManager.get = vi.fn().mockResolvedValue(null);
-      mockNewRelicClient.executeNRQL = vi.fn().mockRejectedValue(
-        new Error('Network error')
-      );
+      mockNewRelicClient.executeNRQL = vi.fn().mockRejectedValue(new Error('Network error'));
 
       await expect(queryService.executeQuery(query)).rejects.toThrow('Network error');
 
@@ -239,9 +235,9 @@ describe('QueryService', () => {
     it('should handle validation errors', async () => {
       const query = 'SELECT count(*) FROM Transaction';
 
-      mockNewRelicClient.validateQuery = vi.fn().mockRejectedValue(
-        new Error('Validation service unavailable')
-      );
+      mockNewRelicClient.validateQuery = vi
+        .fn()
+        .mockRejectedValue(new Error('Validation service unavailable'));
 
       const result = await queryService.validateQuery(query);
 
@@ -269,9 +265,9 @@ describe('QueryService', () => {
     it('should handle suggestion errors gracefully', async () => {
       const partialQuery = 'SELECT';
 
-      mockNewRelicClient.getQuerySuggestions = vi.fn().mockRejectedValue(
-        new Error('Service unavailable')
-      );
+      mockNewRelicClient.getQuerySuggestions = vi
+        .fn()
+        .mockRejectedValue(new Error('Service unavailable'));
 
       const result = await queryService.getQuerySuggestions(partialQuery);
 
@@ -318,9 +314,7 @@ describe('QueryService', () => {
       const entityType = 'Transaction';
 
       mockCacheManager.get = vi.fn().mockResolvedValue(null);
-      mockNewRelicClient.getMetricNames = vi.fn().mockRejectedValue(
-        new Error('API error')
-      );
+      mockNewRelicClient.getMetricNames = vi.fn().mockRejectedValue(new Error('API error'));
 
       const result = await queryService.getMetricNames(entityType);
 
@@ -353,9 +347,7 @@ describe('QueryService', () => {
     });
 
     it('should return cached entity types', async () => {
-      const cachedTypes = [
-        { name: 'Cached App', domain: 'APM', type: 'APPLICATION' },
-      ];
+      const cachedTypes = [{ name: 'Cached App', domain: 'APM', type: 'APPLICATION' }];
 
       mockCacheManager.get = vi.fn().mockResolvedValue(cachedTypes);
 
@@ -404,7 +396,7 @@ describe('QueryService', () => {
   describe('query optimization', () => {
     it('should optimize query by adding LIMIT', async () => {
       const query = 'SELECT * FROM Transaction WHERE appName = "MyApp"';
-      
+
       const result = await queryService.optimizeQuery(query);
 
       expect(result).toContain('LIMIT 100');
@@ -412,7 +404,7 @@ describe('QueryService', () => {
 
     it('should optimize query by adding time range', async () => {
       const query = 'SELECT count(*) FROM Transaction';
-      
+
       const result = await queryService.optimizeQuery(query);
 
       expect(result).toContain('SINCE 1 hour ago');
@@ -420,7 +412,7 @@ describe('QueryService', () => {
 
     it('should not modify already optimized queries', async () => {
       const query = 'SELECT count(*) FROM Transaction SINCE 1 hour ago LIMIT 50';
-      
+
       const result = await queryService.optimizeQuery(query);
 
       expect(result).toBe(query);
@@ -430,7 +422,7 @@ describe('QueryService', () => {
   describe('query analysis', () => {
     it('should analyze query complexity', async () => {
       const simpleQuery = 'SELECT count(*) FROM Transaction SINCE 1 hour ago';
-      
+
       const analysis = await queryService.analyzeQuery(simpleQuery);
 
       expect(analysis).toHaveProperty('syntax');
@@ -452,7 +444,7 @@ describe('QueryService', () => {
         TIMESERIES 1 minute 
         COMPARE WITH 1 week ago
       `;
-      
+
       const analysis = await queryService.analyzeQuery(complexQuery);
 
       expect(analysis.complexity).toBe('high');
@@ -463,7 +455,7 @@ describe('QueryService', () => {
 
     it('should estimate query cost', async () => {
       const expensiveQuery = 'SELECT * FROM Transaction'; // No time limit, no LIMIT
-      
+
       const analysis = await queryService.analyzeQuery(expensiveQuery);
 
       expect(analysis.estimatedCost).toBe('high');

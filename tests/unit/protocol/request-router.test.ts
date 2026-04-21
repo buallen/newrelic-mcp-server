@@ -69,9 +69,9 @@ describe('RequestRouter', () => {
       router.registerHandler('test/method', mockHandler);
 
       expect(router.hasHandler('test/method')).toBe(true);
-      
+
       const result = router.unregisterHandler('test/method');
-      
+
       expect(result).toBe(true);
       expect(router.hasHandler('test/method')).toBe(false);
     });
@@ -86,7 +86,7 @@ describe('RequestRouter', () => {
       router.registerHandler('method2', vi.fn());
 
       const methods = router.getRegisteredMethods();
-      
+
       expect(methods).toContain('method1');
       expect(methods).toContain('method2');
       expect(methods).toHaveLength(2);
@@ -266,9 +266,7 @@ describe('RequestRouter', () => {
 
   describe('error handling', () => {
     it('should handle handler errors', async () => {
-      const mockHandler: RequestHandler = vi.fn().mockRejectedValue(
-        new Error('Handler error')
-      );
+      const mockHandler: RequestHandler = vi.fn().mockRejectedValue(new Error('Handler error'));
 
       router.registerHandler('test/method', mockHandler);
 
@@ -311,9 +309,7 @@ describe('RequestRouter', () => {
     });
 
     it('should log API calls on failure', async () => {
-      const mockHandler: RequestHandler = vi.fn().mockRejectedValue(
-        new Error('Handler error')
-      );
+      const mockHandler: RequestHandler = vi.fn().mockRejectedValue(new Error('Handler error'));
 
       router.registerHandler('test/method', mockHandler);
 

@@ -23,14 +23,14 @@ export interface ServerSettings {
 }
 
 export interface NewRelicSettings {
-  apiKey: string;
-  baseUrl: string;
-  graphqlUrl: string;
+  apiKey?: string;
+  baseUrl?: string;
+  graphqlUrl?: string;
   defaultAccountId?: string;
-  timeout: number;
-  retryAttempts: number;
-  retryDelay: number;
-  rateLimitPerMinute: number;
+  timeout?: number;
+  retryAttempts?: number;
+  retryDelay?: number;
+  rateLimitPerMinute?: number;
 }
 
 export interface CacheSettings {
@@ -52,12 +52,12 @@ export interface RedisSettings {
 
 export interface LoggingSettings {
   level: 'debug' | 'info' | 'warn' | 'error';
-  format: 'json' | 'simple';
-  destination: 'console' | 'file';
+  format?: 'json' | 'simple';
+  destination?: 'console' | 'file';
   filename?: string;
   maxSize?: string;
   maxFiles?: number;
-  enableMetrics: boolean;
+  enableMetrics?: boolean;
 }
 
 export interface SecuritySettings {
@@ -83,34 +83,34 @@ export interface PerformanceSettings {
 export interface EnvironmentVariables {
   // Required
   NEWRELIC_API_KEY: string;
-  
+
   // Optional with defaults
   NEWRELIC_ACCOUNT_ID?: string;
   NEWRELIC_BASE_URL?: string;
   NEWRELIC_GRAPHQL_URL?: string;
-  
+
   MCP_SERVER_PORT?: string;
   MCP_SERVER_HOST?: string;
   MCP_SERVER_TIMEOUT?: string;
-  
+
   CACHE_TYPE?: string;
   CACHE_TTL?: string;
   CACHE_MAX_SIZE?: string;
-  
+
   REDIS_HOST?: string;
   REDIS_PORT?: string;
   REDIS_PASSWORD?: string;
-  
+
   LOG_LEVEL?: string;
   LOG_FORMAT?: string;
   LOG_DESTINATION?: string;
-  
+
   ENABLE_METRICS?: string;
   RATE_LIMIT_PER_MINUTE?: string;
   MAX_CONCURRENT_REQUESTS?: string;
-  
+
   ENABLE_CORS?: string;
   REQUEST_SIZE_LIMIT?: string;
-  
+
   NODE_ENV?: string;
 }

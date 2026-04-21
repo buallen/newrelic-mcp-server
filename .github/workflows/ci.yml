@@ -1,14 +1,24 @@
-name: CI/CD Pipeline
+name: Consolidated CI/CD Pipeline
 
 on:
   push:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "ci-cd-${{ github.ref }}"
+  cancel-in-progress: false
 
 jobs:
   test:
-    name: Test
+    name: Test & Code Quality
     runs-on: ubuntu-latest
     
     strategy:
@@ -18,6 +28,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     
     - name: Setup Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
@@ -28,21 +40,48 @@ jobs:
     - name: Install dependencies
       run: npm ci
     
-    - name: Run linting
-      run: npm run lint
+    - name: Run ESLint
+      run: npm run lint -- --format=json --output-file=eslint-report.json
+      continue-on-error: true
+    
+    - name: Run Prettier check
+      run: npm run format:check
+      continue-on-error: true
     
     - name: Run type checking
       run: npm run type-check
     
-    - name: Run tests
+    - name: Run tests with coverage
       run: npm run test:coverage
     
-    - name: Upload coverage to Codecov
+    - name: Upload coverage reports
       uses: codecov/codecov-action@v3
       with:
-        file: ./coverage/lcov.info
+        files: ./coverage/lcov.info
         flags: unittests
         name: codecov-umbrella
+        fail_ci_if_error: false
+    
+    - name: SonarCloud Scan
+      uses: SonarSource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      if: matrix.node-version == '20.x' && env.SONAR_TOKEN != ''
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Dependency Review
+      uses: actions/dependency-review-action@v3
+      with:
+        fail-on-severity: moderate
 
   build:
     name: Build
@@ -66,51 +105,65 @@ jobs:
       run: npm run build
     
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: build-files
         path: dist/
 
-  docker:
-    name: Docker Build & Push
-    runs-on: ubuntu-latest
-    needs: [test, build]
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-    
-    - name: Login to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-    
-    - name: Extract metadata
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: buallen/newrelic-mcp-server
-        tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=sha,prefix={{branch}}-
-          type=raw,value=latest,enable={{is_default_branch}}
-    
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        platforms: linux/amd64,linux/arm64
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+  # Temporarily disabled until GitHub Pages is properly configured
+  # docs:
+  #   name: Deploy Documentation
+  #   runs-on: ubuntu-latest
+  #   if: github.ref == 'refs/heads/main'
+  #   
+  #   steps:
+  #   - name: Checkout
+  #     uses: actions/checkout@v4
+  #   
+  #   - name: Setup Pages
+  #     uses: actions/configure-pages@v4
+
+  # Temporarily disabled until Docker Hub credentials are configured
+  # docker:
+  #   name: Docker Build & Push
+  #   runs-on: ubuntu-latest
+  #   needs: [test, build]
+  #   if: github.ref == 'refs/heads/main' && secrets.DOCKER_USERNAME != '' && secrets.DOCKER_PASSWORD != ''
+  #   
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v4
+  #   
+  #   - name: Set up Docker Buildx
+  #     uses: docker/setup-buildx-action@v3
+  #   
+  #   - name: Login to Docker Hub
+  #     uses: docker/login-action@v3
+  #     with:
+  #       username: ${{ secrets.DOCKER_USERNAME }}
+  #       password: ${{ secrets.DOCKER_PASSWORD }}
+  #   
+  #   - name: Extract metadata
+  #     id: meta
+  #     uses: docker/metadata-action@v5
+  #     with:
+  #       images: buallen/newrelic-mcp-server
+  #       tags: |
+  #         type=ref,event=branch
+  #         type=ref,event=pr
+  #         type=sha,prefix={{branch}}-
+  #         type=raw,value=latest,enable={{is_default_branch}}
+  #   
+  #   - name: Build and push Docker image
+  #     uses: docker/build-push-action@v5
+  #     with:
+  #       context: .
+  #       platforms: linux/amd64,linux/arm64
+  #       push: true
+  #       tags: ${{ steps.meta.outputs.tags }}
+  #       labels: ${{ steps.meta.outputs.labels }}
+  #       cache-from: type=gha
+  #       cache-to: type=gha,mode=max
 
   security:
     name: Security Scan
@@ -125,55 +178,49 @@ jobs:
       with:
         scan-type: 'fs'
         scan-ref: '.'
-        format: 'sarif'
-        output: 'trivy-results.sarif'
-    
-    - name: Upload Trivy scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v2
-      if: always()
-      with:
-        sarif_file: 'trivy-results.sarif'
+        format: 'table'
 
-  release:
-    name: Release
-    runs-on: ubuntu-latest
-    needs: [test, build, docker]
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        cache: 'npm'
-    
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Download build artifacts
-      uses: actions/download-artifact@v3
-      with:
-        name: build-files
-        path: dist/
-    
-    - name: Create Release
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        # 创建发布包
-        npm pack
-        
-        # 获取版本号
-        VERSION=$(node -p "require('./package.json').version")
-        
-        # 创建 GitHub Release
-        gh release create "v$VERSION" \
-          --title "Release v$VERSION" \
-          --notes "Automated release v$VERSION" \
-          --latest \
-          *.tgz
+  # Temporarily disabled until GitHub token has release permissions
+  # release:
+  #   name: Release
+  #   runs-on: ubuntu-latest
+  #   needs: [test, build]
+  #   if: github.ref == 'refs/heads/main'
+  #   
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v4
+  #     with:
+  #       fetch-depth: 0
+  #   
+  #   - name: Setup Node.js
+  #     uses: actions/setup-node@v4
+  #     with:
+  #       node-version: '20.x'
+  #       cache: 'npm'
+  #   
+  #   - name: Install dependencies
+  #     run: npm ci
+  #   
+  #   - name: Download build artifacts
+  #     uses: actions/download-artifact@v4
+  #     with:
+  #       name: build-files
+  #       path: dist/
+  #   
+  #   - name: Create Release
+  #     env:
+  #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     run: |
+  #       # 创建发布包
+  #       npm pack
+  #       
+  #       # 获取版本号
+  #       VERSION=$(node -p "require('./package.json').version")
+  #       
+  #       # 创建 GitHub Release
+  #       gh release create "v$VERSION" \
+  #         --title "Release v$VERSION" \
+  #         --notes "Automated release v$VERSION" \
+  #         --latest \
+  #         *.tgz

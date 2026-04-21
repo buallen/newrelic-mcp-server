@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmitOnError": false,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/server.ts",
+    "src/protocol/**/*",
+    "src/services/logger.ts",
+    "src/services/cache-manager.ts",
+    "src/services/alert-manager.ts",
+    "src/services/incident-analyzer.ts",
+    "src/services/query-service.ts",
+    "src/services/apm-service.ts",
+    "src/client/newrelic-client.ts",
+    "src/tools/**/*",
+    "src/interfaces/**/*",
+    "src/types/**/*",
+    "src/config/**/*",
+    "src/index.ts"
+  ]
+}

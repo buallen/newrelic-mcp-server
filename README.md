@@ -2,6 +2,10 @@
 
 A Model Context Protocol (MCP) server for NewRelic integration, enabling AI agents to interact with NewRelic's monitoring and observability platform.
 
+## ✅ Production Ready - Configurable LIMIT Support
+
+This MCP server provides **configurable LIMIT values** (1-10,000 + MAX) for NewRelic queries, solving the external MCP server's hardcoded LIMIT 10 restriction.
+
 ## Features
 
 - 🔌 **MCP Protocol Compliance**: Full MCP 1.0 specification support
