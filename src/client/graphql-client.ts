@@ -93,22 +93,16 @@ export class GraphQLClient {
             nrql(query: $nrql, timeout: $timeout) {
               results
               metadata {
-                eventType
                 eventTypes
                 facets
-                messages {
-                  level
-                  description
-                }
+                messages
                 timeWindow {
                   begin
                   end
                   compareWith
                 }
               }
-              totalResult {
-                count
-              }
+              totalResult
               performanceStats {
                 inspectedCount
                 omittedCount
@@ -142,14 +136,17 @@ export class GraphQLClient {
       return {
         results: nrqlData.results || [],
         metadata: {
-          eventType: nrqlData.metadata?.eventType || '',
+          eventType: nrqlData.metadata?.eventTypes?.[0] || '',
           eventTypes: nrqlData.metadata?.eventTypes || [],
           contents: nrqlData.metadata?.facets?.map((facet: string) => ({
             function: 'facet',
             attribute: facet,
             simple: true,
           })) || [],
-          messages: nrqlData.metadata?.messages || [],
+          messages: (nrqlData.metadata?.messages || []).map((msg: string) => ({
+            level: 'info',
+            description: msg,
+          })),
         },
         performanceStats: {
           inspectedCount: nrqlData.performanceStats?.inspectedCount || 0,
@@ -425,10 +422,7 @@ export class GraphQLClient {
           account(id: $accountId) {
             nrql(query: $nrql) {
               metadata {
-                messages {
-                  level
-                  description
-                }
+                messages
               }
             }
           }

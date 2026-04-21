@@ -239,17 +239,11 @@ export class NewRelicClientImpl implements NewRelicClient {
               nrql(query: $nrql) {
                 results
                 metadata {
-                  eventType
                   eventTypes
                   facets
-                  messages {
-                    level
-                    description
-                  }
+                  messages
                 }
-                totalResult {
-                  count
-                }
+                totalResult
               }
             }
           }
@@ -275,13 +269,16 @@ export class NewRelicClientImpl implements NewRelicClient {
       return {
         results: nrqlData.results || [],
         metadata: {
-          eventType: nrqlData.metadata?.eventType || '',
+          eventType: nrqlData.metadata?.eventTypes?.[0] || '',
           eventTypes: nrqlData.metadata?.eventTypes || [],
           contents: [], // Will be populated from facets if available
-          messages: nrqlData.metadata?.messages || [],
+          messages: (nrqlData.metadata?.messages || []).map((msg: string) => ({
+            level: 'info',
+            description: msg,
+          })),
         },
         performanceStats: {
-          inspectedCount: nrqlData.totalResult?.count || 0,
+          inspectedCount: 0, // Not available in this API
           omittedCount: 0,
           matchCount: nrqlData.results?.length || 0,
           wallClockTime: 0, // Not available in this API
