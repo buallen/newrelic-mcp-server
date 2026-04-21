@@ -127,15 +127,20 @@ export class MCPProtocolHandlerImpl implements MCPProtocolHandler {
       );
     }
 
-    // Validate protocol version
-    const supportedVersion = '2024-11-05';
-    if (request.params.protocolVersion !== supportedVersion) {
+    // Protocol version negotiation - support both 2024-11-05 and 2025-06-18
+    const supportedVersions = ['2024-11-05', '2025-06-18'];
+    const clientVersion = request.params.protocolVersion;
+    
+    if (!supportedVersions.includes(clientVersion)) {
       throw this.createError(
         -32000,
-        `Unsupported protocol version: ${request.params.protocolVersion}. Supported: ${supportedVersion}`,
+        `Unsupported protocol version: ${clientVersion}. Supported: ${supportedVersions.join(', ')}`,
         ErrorType.VALIDATION_ERROR
       );
     }
+    
+    // Use the most compatible version (prefer the one the client requested if supported)
+    const negotiatedVersion = clientVersion;
 
     this.clientInfo = request.params.clientInfo;
 
@@ -143,7 +148,7 @@ export class MCPProtocolHandlerImpl implements MCPProtocolHandler {
       jsonrpc: '2.0',
       id: request.id,
       result: {
-        protocolVersion: supportedVersion,
+        protocolVersion: negotiatedVersion,
         capabilities: this.capabilities,
         serverInfo: {
           name: 'newrelic-mcp-server',

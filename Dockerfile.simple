@@ -1,0 +1,32 @@
+# Simple MCP Server Dockerfile - Uses pre-built files
+FROM node:20-alpine
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S mcp -u 1001
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files and install dependencies
+COPY package*.json ./
+RUN npm ci --only=production --ignore-scripts && npm cache clean --force
+
+# Copy pre-built dist and working server files
+COPY dist/ ./dist/
+COPY working-mcp-main.js ./
+COPY improved-mcp-main.js ./
+COPY debug-mcp-main.js ./
+
+# Create logs directory
+RUN mkdir -p logs && chown -R mcp:nodejs . && chmod 755 logs
+
+# Switch to non-root user
+USER mcp
+
+# Set environment for MCP
+ENV NODE_ENV=production
+ENV MCP_MODE=stdio
+
+# The container will run the MCP server in stdio mode
+CMD ["node", "working-mcp-main.js"]

@@ -76,6 +76,25 @@ export class NewRelicMCPServer {
     }
   }
 
+  async initializeMCPOnly(): Promise<void> {
+    if (this.initialized) {
+      return;
+    }
+
+    // Initialize just the MCP protocol handlers without NewRelic authentication
+    try {
+      // Initialize protocol handler
+      await this.protocolHandler.initialize();
+
+      // Register request handlers (but skip NewRelic auth)
+      this.registerHandlers();
+
+      this.initialized = true;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   private registerHandlers(): void {
     // Register MCP protocol handlers
     this.router.registerHandler('initialize', (request) => 

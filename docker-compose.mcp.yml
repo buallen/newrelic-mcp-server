@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  newrelic-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile.simple
+    container_name: newrelic-mcp-server
+    environment:
+      - NODE_ENV=production
+      - NEWRELIC_API_KEY=${NEWRELIC_API_KEY:-your_newrelic_api_key_here}
+      - NEWRELIC_ACCOUNT_ID=${NEWRELIC_ACCOUNT_ID:-464254}
+      - NEWRELIC_GRAPHQL_URL=${NEWRELIC_GRAPHQL_URL:-https://api.newrelic.com/graphql}
+      - MCP_MODE=stdio
+      - LOG_LEVEL=info
+    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs
+    # No port mappings needed for MCP stdio mode
+    # MCP communication happens via docker exec
+    stdin_open: true
+    tty: true
+    networks:
+      - newrelic-mcp-network
+
+networks:
+  newrelic-mcp-network:
+    driver: bridge

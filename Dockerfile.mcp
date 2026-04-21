@@ -1,0 +1,53 @@
+# MCP Server Dockerfile - For stdio-based MCP protocol
+FROM node:20-alpine AS builder
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY tsconfig.json ./
+
+# Install dependencies (including dev dependencies)
+RUN npm ci
+
+# Copy source code and JavaScript files
+COPY src/ ./src/
+COPY *.js ./
+
+# Build application
+RUN npm run build
+
+# Production stage
+FROM node:20-alpine AS production
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S mcp -u 1001
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install only production dependencies (skip prepare script)
+RUN npm ci --only=production --ignore-scripts && npm cache clean --force
+
+# Copy built application from builder stage
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/*.js ./
+
+# Create logs directory
+RUN mkdir -p logs && chown -R mcp:nodejs logs && chmod 755 logs
+
+# Switch to non-root user
+USER mcp
+
+# Set environment for MCP
+ENV NODE_ENV=production
+ENV MCP_MODE=stdio
+
+# The container will run the MCP server in stdio mode
+# Claude Code will communicate with it via docker exec
+CMD ["node", "working-mcp-main.js"]
