@@ -2,7 +2,7 @@
 
 const axios = require('axios');
 
-const API_KEY = 'your_newrelic_api_key_here';
+const API_KEY = process.env.NEWRELIC_API_KEY || 'your_newrelic_api_key_here';
 const ACCOUNT_ID = '464254';
 
 async function testNRQLDirect() {
