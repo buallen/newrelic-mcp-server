@@ -1,66 +1,67 @@
 # NewRelic MCP Server
 
-A Model Context Protocol (MCP) server for NewRelic integration, enabling AI agents to interact with NewRelic's monitoring and observability platform.
-
-## ✅ Production Ready - Configurable LIMIT Support
-
-This MCP server provides **configurable LIMIT values** (1-10,000 + MAX) for NewRelic queries, solving the external MCP server's hardcoded LIMIT 10 restriction.
+A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server for NewRelic integration, enabling AI agents (Claude Code, etc.) to query and analyze your NewRelic observability data.
 
 ## Features
 
-- 🔌 **MCP Protocol Compliance**: Full MCP 1.0 specification support
-- 🔍 **NRQL Queries**: Execute and validate NRQL queries
-- 🚨 **Alert Management**: Create, update, and manage alert policies
-- 📊 **APM Integration**: Access application performance data
-- 🔧 **Incident Analysis**: AI-powered root cause analysis
-- ⚡ **High Performance**: Built-in caching and connection pooling
-- 🔒 **Secure**: API key management and data protection
-- 📈 **Observable**: Built-in metrics and health checks
+- **NRQL Queries** — Execute NRQL with configurable LIMIT (1–10,000+), solving the hardcoded LIMIT 10 restriction in other MCP servers
+- **Alert Management** — List and inspect alert policies
+- **APM Integration** — Access application performance data
+- **Incident Analysis** — AI-powered root cause analysis
+- **Log Queries** — Search and analyze log data
+- **MCP Protocol** — Supports versions `2024-11-05` and `2025-06-18`
+- **Caching** — Built-in result caching for performance
 
-## Quick Start
-
-### Installation
+## Installation
 
 ```bash
-npm install newrelic-mcp-server
+git clone https://github.com/buallen/newrelic-mcp-server.git
+cd newrelic-mcp-server
+npm install
+npm run build
 ```
 
-### Configuration
+## Configuration
 
-1. Set up your environment variables:
+### Environment variables
 
 ```bash
-# Required
 NEWRELIC_API_KEY=your_api_key_here
 NEWRELIC_ACCOUNT_ID=your_account_id
-
-# Optional
-MCP_SERVER_PORT=3000
-CACHE_TYPE=memory
-LOG_LEVEL=info
 ```
 
-2. Start the server:
+Create a `.env` file or pass them directly.
 
-```typescript
-import { NewRelicMCPServer } from 'newrelic-mcp-server';
+### Claude Code (stdio mode)
 
-const server = new NewRelicMCPServer();
-await server.start();
+Add to your `~/.claude/settings.json`:
+
+```json
+"newrelic": {
+  "command": "node",
+  "args": ["/path/to/newrelic-mcp-server/working-mcp-main.js"],
+  "env": {
+    "NEWRELIC_API_KEY": "your_api_key_here",
+    "NEWRELIC_ACCOUNT_ID": "your_account_id"
+  }
+}
 ```
 
-### Docker
+### Docker (stdio mode)
 
 ```bash
-docker run -p 3000:3000 \
-  -e NEWRELIC_API_KEY=your_key \
-  -e NEWRELIC_ACCOUNT_ID=your_account \
-  newrelic-mcp-server
+# Build and start
+docker compose -f docker-compose.mcp.yml up -d
+
+# Or use the helper script
+./start-mcp-docker.sh
 ```
+
+See [DOCKER_SETUP.md](./DOCKER_SETUP.md) for full Docker configuration.
 
 ## Usage Examples
 
-### Execute NRQL Query
+### NRQL Query
 
 ```json
 {
@@ -70,24 +71,7 @@ docker run -p 3000:3000 \
   "params": {
     "name": "nrql_query",
     "arguments": {
-      "query": "SELECT average(duration) FROM Transaction WHERE appName = 'MyApp' SINCE 1 hour ago"
-    }
-  }
-}
-```
-
-### Create Alert Policy
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 2,
-  "method": "tools/call",
-  "params": {
-    "name": "create_alert_policy",
-    "arguments": {
-      "name": "High Error Rate",
-      "incident_preference": "PER_CONDITION"
+      "query": "SELECT average(duration) FROM Transaction WHERE appName = 'MyApp' SINCE 1 hour ago LIMIT 100"
     }
   }
 }
@@ -98,7 +82,7 @@ docker run -p 3000:3000 \
 ```json
 {
   "jsonrpc": "2.0",
-  "id": 3,
+  "id": 2,
   "method": "tools/call",
   "params": {
     "name": "analyze_incident",
@@ -114,16 +98,15 @@ docker run -p 3000:3000 \
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   AI Agent      │    │  MCP Server     │    │   NewRelic      │
-│                 │    │                 │    │                 │
+│  (Claude Code)  │    │                 │    │                 │
 │ ┌─────────────┐ │    │ ┌─────────────┐ │    │ ┌─────────────┐ │
 │ │ MCP Client  │◄┼────┼►│ Protocol    │ │    │ │ REST API    │ │
 │ └─────────────┘ │    │ │ Handler     │ │    │ └─────────────┘ │
 │                 │    │ └─────────────┘ │    │                 │
-│                 │    │        │        │    │ ┌─────────────┐ │
-│                 │    │ ┌─────────────┐ │    │ │ GraphQL     │ │
+│                 │    │ ┌─────────────┐ │    │ ┌─────────────┐ │
 │                 │    │ │ Service     │◄┼────┼►│ NerdGraph   │ │
-│                 │    │ │ Layer       │ │    │ └─────────────┘ │
-│                 │    │ └─────────────┘ │    │                 │
+│                 │    │ │ Layer       │ │    │ │ (GraphQL)   │ │
+│                 │    │ └─────────────┘ │    │ └─────────────┘ │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
@@ -133,90 +116,45 @@ docker run -p 3000:3000 \
 
 - Node.js 18+
 - NewRelic account and API key
-- Optional: Redis for caching
 
 ### Setup
 
 ```bash
-# Clone the repository
-git clone https://github.com/your-org/newrelic-mcp-server.git
+git clone https://github.com/buallen/newrelic-mcp-server.git
 cd newrelic-mcp-server
-
-# Install dependencies
 npm install
-
-# Copy environment file
-cp .env.example .env
-
-# Edit .env with your NewRelic credentials
-# Start development server
+cp .env.example .env   # then edit with your credentials
 npm run dev
 ```
 
 ### Testing
 
 ```bash
-# Run all tests
-npm test
-
-# Run with coverage
-npm run test:coverage
-
-# Run specific test suite
-npm run test -- tests/unit/
+npm test                        # run all tests
+npm run test:coverage           # with coverage report
+npm run test -- tests/unit/     # unit tests only
 ```
 
 ### Building
 
 ```bash
-# Build for production
-npm run build
-
-# Start production server
-npm start
+npm run build   # compile TypeScript to dist/
+npm start       # run production build
 ```
-
-## Configuration
-
-See [Configuration Guide](./docs/configuration.md) for detailed configuration options.
-
-## API Reference
-
-See [API Documentation](./docs/api.md) for complete API reference.
-
-## Deployment
-
-### Docker
-
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY . .
-EXPOSE 3000
-CMD ["npm", "start"]
-```
-
-### Kubernetes
-
-See [Kubernetes deployment examples](./docs/deployment/) for production deployment.
 
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'Add amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Commit your changes
+4. Push and open a Pull Request
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT — see [LICENSE](LICENSE) for details.
 
-## Support
+## Links
 
-- 📖 [Documentation](./docs/)
-- 🐛 [Issue Tracker](https://github.com/your-org/newrelic-mcp-server/issues)
-- 💬 [Discussions](https://github.com/your-org/newrelic-mcp-server/discussions)
-- 📧 [Email Support](mailto:support@example.com)
+- [Issue Tracker](https://github.com/buallen/newrelic-mcp-server/issues)
+- [Docker Setup](./DOCKER_SETUP.md)
+- [Claude Code Setup](./CLAUDE_CODE_SETUP.md)
